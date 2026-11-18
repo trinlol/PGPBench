@@ -6,8 +6,8 @@
 import { useEffect, useState } from "react";
 import { appInit, saveSettings } from "./ipc";
 import { applyTheme, toggleTheme, type Theme } from "./theme";
-import type { InitInfo } from "./types";
-import { Banner, Spinner } from "./components/ui";
+import type { InitInfo, Profile, Settings } from "./types";
+import { Banner, Button, Field, inputClass, Modal, Spinner } from "./components/ui";
 import { Workbench } from "./workbench/Workbench";
 import { Keys } from "./keys/Keys";
 
@@ -18,6 +18,9 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>("light");
   const [init, setInit] = useState<InitInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [clearSeconds, setClearSeconds] = useState(60);
+  const [defaultProfile, setDefaultProfile] = useState<Profile>("compatible");
 
   useEffect(() => {
     appInit()
@@ -25,9 +28,25 @@ export default function App() {
         setInit(info);
         setTheme(info.settings.theme);
         applyTheme(info.settings.theme);
+        setClearSeconds(info.settings.clipboard_clear_seconds);
+        setDefaultProfile(info.settings.default_profile);
       })
       .catch((e) => setError(String(e)));
   }, []);
+
+  const persist = (patch: Partial<Settings>) => {
+    const next: Settings = {
+      theme,
+      clipboard_clear_seconds: clearSeconds,
+      default_profile: defaultProfile,
+      ...patch,
+    };
+    setClearSeconds(next.clipboard_clear_seconds);
+    setDefaultProfile(next.default_profile);
+    return saveSettings(next).catch(() => {
+      /* settings stay applied locally even if persisting fails */
+    });
+  };
 
   const flipTheme = async () => {
     const next = toggleTheme(theme);
@@ -72,6 +91,16 @@ export default function App() {
               {init.data_dir}
             </span>
           ) : null}
+          <button
+            className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.9 2.9l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.9-2.9l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.9-2.9l.1.1a1.7 1.7 0 0 0 1.9.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5h.1a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.9 2.9l-.1.1a1.7 1.7 0 0 0-.3 1.9v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1z" />
+            </svg>
+          </button>
           <button
             className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
             onClick={flipTheme}
@@ -122,6 +151,41 @@ export default function App() {
           </Banner>
         </div>
       ) : null}
+
+      {/* Settings: clipboard auto-clear + default profile (plan §8) */}
+      <Modal open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Settings">
+        <div className="space-y-4">
+          <Field
+            label="Clipboard auto-clear (seconds)"
+            hint="Sensitive copies (ciphertext, keys, decrypted text) are written with the Windows 'secret' hint and cleared automatically after this many seconds. 0 disables auto-clear."
+          >
+            <input
+              type="number"
+              min={0}
+              max={3600}
+              className={inputClass}
+              value={clearSeconds}
+              onChange={(e) => setClearSeconds(Math.max(0, Math.min(3600, Number(e.target.value) || 0)))}
+              onBlur={() => void persist({})}
+            />
+          </Field>
+          <Field label="Default profile" hint="Pre-selected in the Workbench Advanced panel and the generate dialog.">
+            <select
+              className={inputClass}
+              value={defaultProfile}
+              onChange={(e) => void persist({ default_profile: e.target.value as Profile })}
+            >
+              <option value="compatible">Compatible (v4, works everywhere)</option>
+              <option value="rfc9580">RFC 9580 (v6, experimental)</option>
+            </select>
+          </Field>
+          <div className="flex justify-end">
+            <Button variant="primary" onClick={() => setSettingsOpen(false)}>
+              Done
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Surfaces */}
       <main className="min-h-0 flex-1">
