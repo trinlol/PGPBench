@@ -60,7 +60,12 @@ pub fn save_settings(
     default_profile: String,
 ) -> AppResult<serde_json::Value> {
     let mut store = state.0.lock().map_err(|_| AppError::internal("store lock poisoned"))?;
-    store.settings.theme = if theme == "dark" { "dark".into() } else { "light".into() };
+    store.settings.theme = match theme.as_str() {
+        "dark" => "dark".to_string(),
+        "light" => "light".to_string(),
+        // "system" (and anything else) follows the Windows theme.
+        _ => "system".to_string(),
+    };
     store.settings.clipboard_clear_seconds = clipboard_clear_seconds.min(3600);
     store.settings.default_profile = Profile::parse(&default_profile)?.as_str().into();
     store.save_settings()?;

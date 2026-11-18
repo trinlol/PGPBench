@@ -195,7 +195,8 @@ export interface ExtendExpiryRequest {
 }
 
 export interface Settings {
-  theme: "light" | "dark";
+  /** "system" follows the Windows theme until the user picks one. */
+  theme: "light" | "dark" | "system";
   /** 0 disables auto-clear. Default 60. */
   clipboard_clear_seconds: number;
   default_profile: Profile;

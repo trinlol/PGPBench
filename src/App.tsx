@@ -5,7 +5,12 @@
 
 import { useEffect, useState } from "react";
 import { appInit, openKeyFolder, saveSettings } from "./ipc";
-import { applyTheme, toggleTheme, type Theme } from "./theme";
+import {
+  applyTheme,
+  watchSystemTheme,
+  type ResolvedTheme,
+  type ThemePref,
+} from "./theme";
 import type { InitInfo, Profile, Settings } from "./types";
 import { Banner, Button, Field, inputClass, Modal, Spinner } from "./components/ui";
 import { Workbench } from "./workbench/Workbench";
@@ -15,7 +20,10 @@ type Tab = "workbench" | "keys";
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("workbench");
-  const [theme, setTheme] = useState<Theme>("light");
+  /** The stored preference: "system" follows Windows until the user picks. */
+  const [themePref, setThemePref] = useState<ThemePref>("system");
+  /** What is actually displayed right now. */
+  const [resolved, setResolved] = useState<ResolvedTheme>("light");
   const [init, setInit] = useState<InitInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -26,21 +34,29 @@ export default function App() {
     appInit()
       .then((info) => {
         setInit(info);
-        setTheme(info.settings.theme);
-        applyTheme(info.settings.theme);
+        setThemePref(info.settings.theme);
         setClearSeconds(info.settings.clipboard_clear_seconds);
         setDefaultProfile(info.settings.default_profile);
       })
       .catch((e) => setError(String(e)));
   }, []);
 
+  // Apply the preference; while it is "system", keep following Windows live
+  // (the webview's prefers-color-scheme tracks the OS app-mode setting).
+  useEffect(() => {
+    setResolved(applyTheme(themePref));
+    if (themePref !== "system") return;
+    return watchSystemTheme((r) => setResolved(r));
+  }, [themePref]);
+
   const persist = (patch: Partial<Settings>) => {
     const next: Settings = {
-      theme,
+      theme: themePref,
       clipboard_clear_seconds: clearSeconds,
       default_profile: defaultProfile,
       ...patch,
     };
+    if (patch.theme !== undefined) setThemePref(patch.theme);
     setClearSeconds(next.clipboard_clear_seconds);
     setDefaultProfile(next.default_profile);
     return saveSettings(next).catch(() => {
@@ -48,19 +64,9 @@ export default function App() {
     });
   };
 
-  const flipTheme = async () => {
-    const next = toggleTheme(theme);
-    setTheme(next);
-    applyTheme(next);
-    try {
-      await saveSettings({
-        theme: next,
-        clipboard_clear_seconds: init?.settings.clipboard_clear_seconds ?? 60,
-        default_profile: init?.settings.default_profile ?? "compatible",
-      });
-    } catch {
-      /* theme stays applied locally even if persisting fails */
-    }
+  /** Manual toggle: pin the opposite of what is currently displayed. */
+  const flipTheme = () => {
+    void persist({ theme: resolved === "dark" ? "light" : "dark" });
   };
 
   return (
@@ -109,8 +115,13 @@ export default function App() {
             className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
             onClick={flipTheme}
             aria-label="Toggle theme"
+            title={
+              themePref === "system"
+                ? `Following your Windows theme (${resolved}). Click to pin ${resolved === "dark" ? "light" : "dark"} mode.`
+                : `Switch to ${resolved === "dark" ? "light" : "dark"} mode`
+            }
           >
-            {theme === "dark" ? (
+            {resolved === "dark" ? (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="4" />
                 <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
@@ -159,6 +170,24 @@ export default function App() {
       {/* Settings: clipboard auto-clear + default profile (plan §8) */}
       <Modal open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Settings">
         <div className="space-y-4">
+          <Field
+            label="Theme"
+            hint={
+              themePref === "system"
+                ? `Currently following your Windows theme (${resolved} mode).`
+                : undefined
+            }
+          >
+            <select
+              className={inputClass}
+              value={themePref}
+              onChange={(e) => void persist({ theme: e.target.value as Settings["theme"] })}
+            >
+              <option value="system">Match Windows theme</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </Field>
           <Field
             label="Clipboard auto-clear (seconds)"
             hint="Sensitive copies (ciphertext, keys, decrypted text) are written with the Windows 'secret' hint and cleared automatically after this many seconds. 0 disables auto-clear."

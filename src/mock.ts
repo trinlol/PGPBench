@@ -34,7 +34,7 @@ const FPR_A = "AA11B22C33D44E55F66A77B88C99D00EE11F22A3";
 const FPR_B = "BB22C33D44E55F66A77B88C99D00EE11F22A33B4";
 
 const settings: Settings = {
-  theme: "light",
+  theme: "system",
   clipboard_clear_seconds: 60,
   default_profile: "compatible",
 };
@@ -84,7 +84,8 @@ export async function save_settings(a: {
   clipboard_clear_seconds: number;
   default_profile: string;
 }): Promise<Settings> {
-  settings.theme = a.theme === "dark" ? "dark" : "light";
+  settings.theme =
+    a.theme === "dark" ? "dark" : a.theme === "light" ? "light" : "system";
   settings.clipboard_clear_seconds = a.clipboard_clear_seconds;
   settings.default_profile = a.default_profile as Settings["default_profile"];
   return { ...settings };

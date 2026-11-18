@@ -50,7 +50,8 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Settings {
-            theme: "light".into(),
+            // Follow the Windows theme until the user picks one explicitly.
+            theme: "system".into(),
             clipboard_clear_seconds: 60,
             default_profile: "compatible".into(),
         }
