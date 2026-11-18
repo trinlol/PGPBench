@@ -1,7 +1,14 @@
 # PocketPGP
 
+[![CI](https://github.com/trinlol/PocketPGP/actions/workflows/ci.yml/badge.svg)](https://github.com/trinlol/PocketPGP/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v-release/trinlol/PocketPGP)](https://github.com/trinlol/PocketPGP/releases)
+
 A minimal, modern, fully-offline OpenPGP app for Windows — a clipboard-first
 alternative to Kleopatra, without the UI bloat.
+
+| Workbench — one paste surface, auto-detects | Keys — your keyring at a glance |
+|---|---|
+| ![Workbench](docs/shot-workbench.png) | ![Keys](docs/shot-keys.png) |
 
 Everything you need for personal daily OpenPGP use, nothing else:
 
@@ -142,7 +149,11 @@ powershell -File tests\interop.ps1
   secret packet, armor mangling, and a sign+encrypt → decrypt+verify
   round-trip.
 - `POCKETPGP_DATA_DIR` overrides the key store location (used by the
-  interop harness to isolate state).
+  interop harness and tests to isolate state; your real keys live in
+  `%LOCALAPPDATA%\PocketPGP`, which Windows cleanup never touches).
+- CI runs the full test suite on every push; pushing a `v*` tag builds both
+  release artifacts on GitHub's runners and attaches them to the release
+  automatically (`.github/workflows/release.yml`).
 
 ## License
 

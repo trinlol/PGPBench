@@ -1,0 +1,37 @@
+# CI: every push to main and every PR.
+# Runs the full Rust test suite (keygen round-trips, at-rest encryption,
+# armor mangling, sign+encrypt round-trip) plus the strict TS build.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Rust tests (engine round-trips)
+        working-directory: src-tauri
+        run: cargo test --lib
+
+      - name: Frontend build (strict TS + vite)
+        run: npm run build
