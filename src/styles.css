@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+/* Manual dark-mode class strategy (user toggle), not prefers-color-scheme only */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* Thin scrollbars that match both themes */
+* {
+  scrollbar-width: thin;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgb(0 0 0 / 0.2);
+  border-radius: 4px;
+}
+.dark *::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.2);
+}
+
+textarea {
+  field-sizing: content;
+}
