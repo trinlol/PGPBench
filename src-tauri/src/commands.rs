@@ -307,8 +307,9 @@ pub fn export_public(state: State<AppState>, fpr: String) -> AppResult<String> {
     })
 }
 
-/// Open the key store's keys\ folder in Windows Explorer. When a fingerprint
-/// is given, the key's files are selected; otherwise the folder itself opens.
+/// Open the key store in Windows Explorer. With a fingerprint, Explorer
+/// opens the keys\ folder with that key's .pub.asc selected; without one,
+/// it opens the store root (the path shown in the app header).
 /// Purely local: shells out to explorer.exe with a path we constructed from
 /// the store (no user-controlled strings reach the command line).
 #[tauri::command]
@@ -328,12 +329,13 @@ pub fn open_key_folder(state: State<AppState>, fpr: Option<String>) -> AppResult
             store.pub_path(&clean)
         });
 
-        // Prefer highlighting the key's .pub.asc in Explorer; fall back to
-        // just opening the keys folder. explorer.exe reports odd exit codes
-        // even on success, so we only check that the file/dir exists.
+        // Prefer highlighting the key's .pub.asc in Explorer; without a
+        // fingerprint, open the store root (the path shown in the header).
+        // explorer.exe reports odd exit codes even on success, so we only
+        // check that the file/dir exists.
         let (path, selecting): (PathBuf, bool) = match &select {
             Some(p) if p.exists() => (p.clone(), true),
-            _ => (store.keys_dir.clone(), false),
+            _ => (store.root.clone(), false),
         };
         if !path.exists() {
             return Err(AppError::io("the key store folder does not exist yet"));

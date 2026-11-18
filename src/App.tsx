@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { appInit, saveSettings } from "./ipc";
+import { appInit, openKeyFolder, saveSettings } from "./ipc";
 import { applyTheme, toggleTheme, type Theme } from "./theme";
 import type { InitInfo, Profile, Settings } from "./types";
 import { Banner, Button, Field, inputClass, Modal, Spinner } from "./components/ui";
@@ -84,12 +84,16 @@ export default function App() {
 
         <div className="flex items-center gap-2">
           {init ? (
-            <span
-              className="hidden max-w-[220px] truncate text-[11px] text-neutral-400 dark:text-neutral-500 sm:block"
-              title={init.data_dir}
+            <button
+              className="hidden max-w-[260px] items-center gap-1 truncate rounded px-1.5 py-1 text-[11px] text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300 sm:flex"
+              title={`${init.data_dir} — click to open`}
+              onClick={() => void openKeyFolder(null)}
             >
-              {init.data_dir}
-            </span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+              </svg>
+              <span className="truncate">{init.data_dir}</span>
+            </button>
           ) : null}
           <button
             className="rounded-lg p-2 text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
