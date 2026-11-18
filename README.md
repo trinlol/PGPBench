@@ -20,6 +20,19 @@ Everything you need for personal daily OpenPGP use, nothing else:
   ever touches disk; passphrases live in memory only for the single
   operation that needs them.
 
+## Install
+
+**Windows 10/11** — grab the latest release from the
+[releases page](https://github.com/trinlol/PocketPGP/releases):
+
+- **`PocketPGP_0.1.0_x64-setup.exe`** — the installer (per-user, no admin
+  prompt). Adds Start-menu entries and an uninstaller.
+- **`pocketpgp.exe`** — the portable build. One file, no install; put it
+  anywhere and run it. Requires the WebView2 Runtime (preinstalled on
+  current Windows 10/11).
+
+Both are fully offline: the app makes no network calls, ever.
+
 ## Using it
 
 ```

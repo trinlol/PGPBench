@@ -2,6 +2,9 @@
 node_modules/
 dist/
 
+# Release artifacts (attached to GitHub releases, not committed)
+release/
+
 # Rust / Tauri
 src-tauri/target/
 src-tauri/gen/schemas/

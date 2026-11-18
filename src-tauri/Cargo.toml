@@ -6,7 +6,7 @@ authors = ["PocketPGP contributors"]
 edition = "2021"
 rust-version = "1.90"
 license = "MIT OR Apache-2.0"
-repository = ""
+repository = "https://github.com/trinlol/PocketPGP"
 default-run = "pocketpgp"
 
 [lib]
