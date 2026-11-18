@@ -15,6 +15,7 @@ export function PassphraseModal({
   onCancel,
   busy = false,
   error,
+  allowEmpty = false,
 }: {
   open: boolean;
   title?: string;
@@ -24,6 +25,8 @@ export function PassphraseModal({
   onCancel: () => void;
   busy?: boolean;
   error?: string | null;
+  /** Allow submitting an empty passphrase (keys stored without one). */
+  allowEmpty?: boolean;
 }) {
   const [pw, setPw] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -48,7 +51,7 @@ export function PassphraseModal({
           autoComplete="off"
           onChange={(e) => setPw(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && pw && !busy) onPassphrase(pw);
+            if (e.key === "Enter" && (pw || allowEmpty) && !busy) onPassphrase(pw);
           }}
         />
       </Field>
@@ -57,7 +60,7 @@ export function PassphraseModal({
         <Button onClick={onCancel} disabled={busy}>
           Cancel
         </Button>
-        <Button variant="primary" disabled={!pw || busy} onClick={() => onPassphrase(pw)}>
+        <Button variant="primary" disabled={(!pw && !allowEmpty) || busy} onClick={() => onPassphrase(pw)}>
           {busy ? "Working..." : confirmLabel}
         </Button>
       </div>

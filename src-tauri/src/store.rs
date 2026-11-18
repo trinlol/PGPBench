@@ -67,13 +67,19 @@ pub struct Store {
 }
 
 impl Store {
-    /// Resolve %LOCALAPPDATA%\PocketPGP, create it (with a per-user profile
-    /// ACL by inheritance), verify the ACL, and load settings.
+    /// Resolve %LOCALAPPDATA%\PocketPGP (or $POCKETPGP_DATA_DIR when
+    /// overridden - used by the interop test harness to isolate keyring
+    /// state), create it, verify the ACL, and load settings.
     pub fn init() -> AppResult<Self> {
-        let local = std::env::var_os("LOCALAPPDATA")
-            .map(PathBuf::from)
-            .ok_or_else(|| AppError::io("cannot resolve %LOCALAPPDATA%"))?;
-        let root = local.join("PocketPGP");
+        let root = match std::env::var_os("POCKETPGP_DATA_DIR") {
+            Some(dir) => PathBuf::from(dir),
+            None => {
+                let local = std::env::var_os("LOCALAPPDATA")
+                    .map(PathBuf::from)
+                    .ok_or_else(|| AppError::io("cannot resolve %LOCALAPPDATA%"))?;
+                local.join("PocketPGP")
+            }
+        };
         let keys_dir = root.join("keys");
 
         fs::create_dir_all(&keys_dir)?;

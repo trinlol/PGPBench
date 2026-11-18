@@ -119,11 +119,9 @@ export async function key_details(a: { fpr: string }): Promise<KeyDetails> {
 
 export async function generate_key(a: { args: GenerateRequest }): Promise<GenerateResult> {
   await sleep(600);
-  const fpr = Array.from({ length: 20 }, (_, i) =>
+  const fpr = Array.from({ length: 40 }, (_, i) =>
     String.fromCharCode("A".charCodeAt(0) + ((Date.now() + i * 7) % 26)),
-  )
-    .join("")
-    .slice(0, 40);
+  ).join("");
   const key: KeySummary = {
     fpr,
     uids: [`${a.args.name} <${a.args.email}>`],
@@ -148,6 +146,18 @@ export async function generate_key(a: { args: GenerateRequest }): Promise<Genera
 
 export async function import_key(a: { args: ImportRequest }): Promise<ImportPreview> {
   const armored = a.args.armored.toUpperCase();
+  // Hard-reject path for policy testing: keys whose armor hints at DSA/Elgamal.
+  if (armored.includes("DSA") || armored.includes("ELGAMAL")) {
+    return {
+      ok: false,
+      error:
+        "The primary key uses DSA, which is deprecated and rejected by this app",
+      key: null,
+      secret: false,
+      warnings: [],
+      would_replace: false,
+    };
+  }
   if (armored.includes("BEGIN PGP PRIVATE KEY BLOCK")) {
     const key: KeySummary = {
       fpr: "DD44" + FPR_A.slice(4),

@@ -216,8 +216,24 @@ pub fn encrypt(params: &EncryptParams) -> AppResult<(String, bool, Vec<String>)>
         }
     }
 
-    // Common configuration lives on the pre-encryption builder.
-    let mut base = MessageBuilder::from_bytes("message.txt", params.message.as_bytes().to_vec());
+    // A type-Text data signature is verified against the CRLF-canonical form
+    // of the text. rPGP's builder hashes the payload verbatim, so the signed
+    // payload itself must be CRLF (carried in a Utf8 literal packet) - or
+    // GnuPG (which canonicalizes when verifying) reports a bad signature.
+    // Unsigned messages keep the user's bytes untouched in a binary literal.
+    let message_bytes = if params.sign_with.is_some() {
+        let normalized = params.message.replace("\r\n", "\n").replace('\n', "\r\n");
+        normalized.into_bytes()
+    } else {
+        params.message.as_bytes().to_vec()
+    };
+
+    let mut base = MessageBuilder::from_bytes("message.txt", message_bytes);
+    if params.sign_with.is_some() {
+        base.data_mode(pgp::packet::DataMode::Utf8)
+            .map_err(|e| AppError::crypto(format!("setting text data mode failed: {e}")))?;
+        base.sign_text();
+    }
     if params.compress {
         use pgp::types::CompressionAlgorithm;
         base.compression(CompressionAlgorithm::ZLIB);
@@ -228,7 +244,6 @@ pub fn encrypt(params: &EncryptParams) -> AppResult<(String, bool, Vec<String>)>
             .clone()
             .map(Password::from)
             .unwrap_or_else(Password::empty);
-        base.sign_text();
         base.sign(
             pgputil::signing_component(signer),
             pw,

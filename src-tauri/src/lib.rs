@@ -6,13 +6,13 @@
 //! All secrets live only in the Rust core, memory-scoped per operation.
 //! Zero network calls. Single engine: rPGP.
 
-mod armorfix;
+pub mod armorfix;
 mod commands;
-mod error;
-mod keygen;
-mod msgops;
-mod pgputil;
-mod store;
+pub mod error;
+pub mod keygen;
+pub mod msgops;
+pub mod pgputil;
+pub mod store;
 
 pub use error::{AppError, AppResult};
 

@@ -134,7 +134,7 @@ export default function App() {
             <Spinner />
           </div>
         ) : tab === "workbench" ? (
-          <Workbench defaultProfile={init.settings.default_profile} />
+          <Workbench defaultProfile={init.settings.default_profile} onOpenKeys={() => setTab("keys")} />
         ) : (
           <Keys defaultProfile={init.settings.default_profile} />
         )}

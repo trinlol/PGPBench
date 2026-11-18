@@ -95,8 +95,15 @@ export function Modal({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div
+        role="dialog"
+        aria-modal="true"
         className={`max-h-[90vh] w-full ${wide ? "max-w-2xl" : "max-w-md"} overflow-y-auto rounded-xl bg-white p-5 shadow-2xl dark:bg-neutral-900 dark:text-neutral-100`}
       >
         <div className="mb-3 flex items-center justify-between">
@@ -165,6 +172,7 @@ export function CopyChip({
   return (
     <button
       className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 ${className}`}
+      aria-label={label || "Copy"}
       onClick={async (e) => {
         e.stopPropagation();
         try {

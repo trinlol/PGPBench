@@ -137,16 +137,25 @@ pub fn generate_key(
         _ => return Err(AppError::input("unsupported key version")),
     }
 
-    builder.subkeys(vec![SubkeyParamsBuilder::default()
-        .version(version)
-        .key_type(subkey_type)
-        .can_encrypt(EncryptionCaps::All)
-        .build()
-        .map_err(|e| AppError::input(format!("invalid subkey parameters: {e}")))?]);
-
+    // The passphrase must lock EVERY secret packet: primary AND subkeys
+    // (rPGP's builder takes per-component passphrases; a missing one leaves
+    // that component's secret material in the clear - plan §7 rule 5).
     if let Some(pw) = opts.passphrase {
         builder.passphrase(Some(pw.to_string()));
     }
+
+    let mut subkey_params = SubkeyParamsBuilder::default();
+    subkey_params
+        .version(version)
+        .key_type(subkey_type)
+        .can_encrypt(EncryptionCaps::All);
+    if let Some(pw) = opts.passphrase {
+        subkey_params.passphrase(Some(pw.to_string()));
+    }
+
+    builder.subkeys(vec![subkey_params
+        .build()
+        .map_err(|e| AppError::input(format!("invalid subkey parameters: {e}")))?]);
 
     let params = builder
         .build()
@@ -441,6 +450,7 @@ fn create_revocation_inner(
     rng: &mut ThreadRng,
 ) -> pgp::errors::Result<String> {
     use pgp::armor::{write as armor_write, BlockType};
+    use pgp::composed::DetachedSignature;
 
     let mut config = SignatureConfig::from_key(&mut *rng, &key.primary_key, SignatureType::KeyRevocation)?;
     config.hashed_subpackets = vec![
@@ -464,8 +474,13 @@ fn create_revocation_inner(
         vec!["PocketPGP revocation certificate".into()],
     );
 
+    // Serialize through DetachedSignature: its Serialize impl writes the
+    // signature packet WITH its packet header. Serializing the bare
+    // `Signature` would emit only the body, which GnuPG cannot parse.
+    let ds = DetachedSignature::new(sig);
+
     let mut buf = Vec::new();
-    armor_write(&sig, BlockType::PublicKey, &mut buf, Some(&headers), true)?;
+    armor_write(&ds, BlockType::PublicKey, &mut buf, Some(&headers), true)?;
 
     String::from_utf8(buf).map_err(|e| pgp::errors::Error::Utf8Error {
         source: e.utf8_error(),
@@ -560,6 +575,21 @@ mod tests {
         // Armor round trips.
         let (sec, _) = SignedSecretKey::from_string(&sec_armored).unwrap();
         sec.verify_bindings().unwrap();
+
+        // EVERY secret packet must be passphrase-encrypted at rest
+        // (plan §7 rule 5) - primary AND subkeys.
+        use pgp::types::SecretParams;
+        assert!(
+            matches!(sec.primary_key.secret_params(), SecretParams::Encrypted(_)),
+            "primary secret must be encrypted at rest"
+        );
+        for sub in &sec.secret_subkeys {
+            assert!(
+                matches!(sub.key.secret_params(), SecretParams::Encrypted(_)),
+                "subkey secret must be encrypted at rest"
+            );
+        }
+
         let (pubkey, _) = pgp::composed::SignedPublicKey::from_string(&pub_armored).unwrap();
         pubkey.verify_bindings().unwrap();
         assert_eq!(
@@ -621,7 +651,7 @@ mod tests {
         b.encrypt_to_key(&mut rng, &pubkey.public_subkeys[0]).unwrap();
         let armored = b.to_armored_string(&mut rng, ArmorOptions::default()).unwrap();
 
-        let (mut msg, _) = Message::from_string(&armored).unwrap();
+        let (msg, _) = Message::from_string(&armored).unwrap();
         let pw = Password::from("pw".to_string());
         let mut dec = msg.decrypt(&pw, &sec).unwrap();
         let text = dec.as_data_string().unwrap();
@@ -639,9 +669,55 @@ mod tests {
         assert!(signed.starts_with("-----BEGIN PGP SIGNED MESSAGE-----"));
 
         let (csm, _) = CleartextSignedMessage::from_string(&signed).unwrap();
-        let mut rng = rand::thread_rng();
-        let _ = &mut rng;
         csm.verify(&sec.to_public_key().primary_key).unwrap();
+    }
+
+    #[test]
+    fn sign_and_encrypt_then_decrypt_and_verify_roundtrip() {
+        // The exact flow the GnuPG interop matrix case A3 exercises:
+        // a Text-type data signature must be made over the CRLF-canonical
+        // form (Utf8 literal), or verifying implementations that
+        // canonicalize (GnuPG) will reject it.
+        let (sec, _, sec_armored, _) =
+            generate_key(&opts(Profile::Compatible, None, Some("pw"))).unwrap();
+        let pubkey = sec.to_public_key();
+        let (sec_re, _) = SignedSecretKey::from_string(&sec_armored).unwrap();
+
+        let params = crate::msgops::EncryptParams {
+            message: "hello with signature\nsecond line\n".into(),
+            recipients: vec![pubkey],
+            sign_with: Some(&sec_re),
+            sign_passphrase: Some("pw".into()),
+            profile: Profile::Compatible,
+            armor: true,
+            compress: false,
+        };
+        let (armored, _binary, _) = crate::msgops::encrypt(&params).unwrap();
+        assert!(armored.starts_with("-----BEGIN PGP MESSAGE-----"));
+
+        // Round-trip through a scratch store so decrypt can find the keys.
+        let dir = std::env::temp_dir().join(format!("pocketpgp-test-ses-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let fpr = crate::pgputil::fpr_hex(&sec.primary_key.fingerprint());
+        std::env::set_var("POCKETPGP_DATA_DIR", &dir);
+        let st = crate::store::Store::init().unwrap();
+        {
+            use pgp::composed::ArmorOptions;
+            let pub_armored = sec
+                .to_public_key()
+                .to_armored_string(ArmorOptions::default())
+                .unwrap();
+            let sec_armored_out = sec
+                .to_armored_string(ArmorOptions::default())
+                .unwrap();
+            st.save_key(&fpr, &pub_armored, Some(&sec_armored_out), None).unwrap();
+        }
+
+        let (text, sigs, _) = crate::msgops::decrypt(&st, &armored, Some("pw")).unwrap();
+        assert!(text.contains("hello with signature"), "plaintext mismatch: {text:?}");
+        assert_eq!(sigs.len(), 1, "expected one signature");
+        assert!(sigs[0].valid, "embedded signature did not verify");
+        assert_eq!(sigs[0].key_source, "own");
     }
 
     #[test]
@@ -668,7 +744,7 @@ mod tests {
         let armored = sec.to_armored_string(ArmorOptions::default()).unwrap();
 
         // Old passphrase must now fail, new one must work.
-        let (mut relocked, _) = SignedSecretKey::from_string(&armored).unwrap();
+        let (relocked, _) = SignedSecretKey::from_string(&armored).unwrap();
         let pw_old = Password::from("old pw".to_string());
         let pw_new = Password::from("new pw".to_string());
         assert!(relocked.primary_key.unlock(&pw_old, |_, _| Ok(())).is_err());

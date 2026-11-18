@@ -92,19 +92,30 @@ pub fn normalize_armor(input: &str) -> String {
             }
             in_body = true;
         }
-        // Body line: strip every whitespace char, keep checksum separately.
+        // Body line: strip every whitespace char. The CRC24 checksum line
+        // may have been merged into the body by re-wrapping - it is split
+        // off again after the loop (the last '=' run in the stream).
         let compact: String = t.chars().filter(|c| !c.is_whitespace()).collect();
         if compact.is_empty() {
             continue;
         }
-        if let Some(rest) = compact.strip_prefix('=') {
-            checksum = Some(format!("={rest}"));
-        } else {
-            body.push_str(&compact);
-        }
+        body.push_str(&compact);
     }
 
     let end_line = end_line.unwrap_or_else(|| format!("-----END {block_kind} -----"));
+
+    // Recover a CRC24 checksum that chat-app re-wrapping merged into the
+    // body: base64 never contains '=' except as trailing padding, and the
+    // checksum is the final 4-5 chars starting with '='.
+    if checksum.is_none() {
+        if let Some(pos) = body.rfind('=') {
+            let tail_len = body.len() - pos;
+            if tail_len <= 5 && pos > 0 && body[pos + 1..].chars().all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '/') {
+                checksum = Some(body[pos..].to_string());
+                body.truncate(pos);
+            }
+        }
+    }
 
     let mut out = String::with_capacity(input.len() + 64);
     out.push_str(&begin_line);
@@ -185,6 +196,19 @@ ijk lmnop\r\n\
         assert!(out.contains("mQINBGabcdefghijklmnop\n"));
         assert!(out.contains("=ab12\n"));
         assert!(out.ends_with("-----END PGP PUBLIC KEY BLOCK-----\n"));
+    }
+
+    #[test]
+    fn recovers_checksum_merged_into_body() {
+        // A chat app re-wrapped the body so hard that the CRC24 line got
+        // fused into the base64 stream mid-line.
+        let input = "\
+-----BEGIN PGP MESSAGE-----\n\
+\n\
+aGVsbG8gd29ybGQ=ab12\n\
+-----END PGP MESSAGE-----";
+        let out = normalize_armor(input);
+        assert!(out.contains("aGVsbG8gd29ybGQ\n=ab12\n"), "checksum not split back out: {out}");
     }
 
     #[test]
