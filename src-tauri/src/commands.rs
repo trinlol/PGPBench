@@ -307,6 +307,51 @@ pub fn export_public(state: State<AppState>, fpr: String) -> AppResult<String> {
     })
 }
 
+/// Open the key store's keys\ folder in Windows Explorer. When a fingerprint
+/// is given, the key's files are selected; otherwise the folder itself opens.
+/// Purely local: shells out to explorer.exe with a path we constructed from
+/// the store (no user-controlled strings reach the command line).
+#[tauri::command]
+pub fn open_key_folder(state: State<AppState>, fpr: Option<String>) -> AppResult<bool> {
+    with_store(&state, |store| {
+        use std::path::PathBuf;
+        use std::process::Command;
+
+        // Sanitize to a bare hex fingerprint before building any path.
+        let select: Option<PathBuf> = fpr.map(|f| {
+            let clean: String = f
+                .chars()
+                .filter(|c| c.is_ascii_hexdigit())
+                .take(64)
+                .collect::<String>()
+                .to_uppercase();
+            store.pub_path(&clean)
+        });
+
+        // Prefer highlighting the key's .pub.asc in Explorer; fall back to
+        // just opening the keys folder. explorer.exe reports odd exit codes
+        // even on success, so we only check that the file/dir exists.
+        let (path, selecting): (PathBuf, bool) = match &select {
+            Some(p) if p.exists() => (p.clone(), true),
+            _ => (store.keys_dir.clone(), false),
+        };
+        if !path.exists() {
+            return Err(AppError::io("the key store folder does not exist yet"));
+        }
+
+        let result = if selecting {
+            Command::new("explorer")
+                .arg(format!("/select,{}", path.to_string_lossy()))
+                .spawn()
+        } else {
+            Command::new("explorer").arg(&path).spawn()
+        };
+        result
+            .map(|_| true)
+            .map_err(|e| AppError::io(format!("could not open the key folder: {e}")))
+    })
+}
+
 #[derive(serde::Deserialize)]
 pub struct DeleteArgs {
     pub fpr: String,

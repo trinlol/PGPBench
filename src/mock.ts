@@ -220,6 +220,16 @@ export async function export_public(a: { fpr: string }): Promise<string> {
   return `-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nmock-public-${a.fpr}\n=AAAA\n-----END PGP PUBLIC KEY BLOCK-----\n`;
 }
 
+export async function open_key_folder(a: { fpr: string | null }): Promise<boolean> {
+  // Browser dev mode: point the user at the folder in the console instead.
+  console.info(
+    a.fpr
+      ? `PocketPGP (mock): would open the key folder and select ${a.fpr}`
+      : "PocketPGP (mock): would open the key folder",
+  );
+  return true;
+}
+
 export async function delete_key(a: { args: { fpr: string; confirm: boolean } }): Promise<boolean> {
   const i = keys.findIndex((k) => k.fpr === a.args.fpr.toUpperCase());
   if (i >= 0) keys.splice(i, 1);

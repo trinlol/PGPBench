@@ -38,6 +38,7 @@ pub fn run() {
             commands::generate_key,
             commands::import_key,
             commands::export_public,
+            commands::open_key_folder,
             commands::delete_key,
             commands::encrypt,
             commands::decrypt,

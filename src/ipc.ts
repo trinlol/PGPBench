@@ -93,6 +93,9 @@ export const importKey = (req: ImportRequest) => call<ImportPreview>("import_key
 
 export const exportPublic = (fpr: string) => call<string>("export_public", { fpr });
 
+/** Open the keys folder in Explorer (selects the key's files when fpr given). */
+export const openKeyFolder = (fpr: string | null) => call<boolean>("open_key_folder", { fpr });
+
 export const deleteKey = (fpr: string) => call<boolean>("delete_key", { args: { fpr, confirm: true } });
 
 // ---------------------------------------------------------------------------

@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from "react";
 import type { Algo, GenerateResult, Profile } from "../types";
-import { copyKeyToClipboard, copyTextSecret, generateKey } from "../ipc";
+import { copyKeyToClipboard, copyTextSecret, generateKey, openKeyFolder } from "../ipc";
 import {
   Badge,
   Banner,
@@ -331,6 +331,7 @@ export function PostGeneratePanel({
   const [confirmPrivate, setConfirmPrivate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [openedFolder, setOpenedFolder] = useState(false);
 
   useEffect(() => {
     setCopiedPublic(false);
@@ -338,6 +339,7 @@ export function PostGeneratePanel({
     setConfirmPrivate(false);
     setError(null);
     setBusy(false);
+    setOpenedFolder(false);
   }, [result]);
 
   if (!result) return null;
@@ -345,13 +347,24 @@ export function PostGeneratePanel({
   const key = result.key;
   const label = keyLabel(key);
   const { email } = parseUid(key.uids[0] ?? "");
-  const revPath = `%LOCALAPPDATA%\\PocketPGP\\keys\\${key.fpr}.rev.asc`;
+  const keysPath = `%LOCALAPPDATA%\\PocketPGP\\keys\\`;
+  const revPath = `${keysPath}${key.fpr}.rev.asc`;
 
   const copyPublic = async () => {
     setError(null);
     try {
       await copyKeyToClipboard(key.fpr, "public");
       setCopiedPublic(true);
+    } catch (err) {
+      setError(String(err));
+    }
+  };
+
+  const openFolder = async () => {
+    setError(null);
+    try {
+      await openKeyFolder(key.fpr);
+      setOpenedFolder(true);
     } catch (err) {
       setError(String(err));
     }
@@ -375,8 +388,9 @@ export function PostGeneratePanel({
     <Modal open onClose={onClose} title="Key generated" wide>
       <div className="space-y-4">
         <Banner tone="success" title={`${label} is ready`}>
-          The key is now in your keyring. Copy the public key wherever you need it - the private key
-          never leaves this device.
+          The key was saved to this device in <code className="font-mono text-[11px]">{keysPath}</code> - a
+          public file, a passphrase-encrypted private file, and the revocation certificate below. Copy the
+          public key wherever you need it; the private key never leaves this device.
         </Banner>
 
         <div className="rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
@@ -421,6 +435,13 @@ export function PostGeneratePanel({
             ) : (
               "Copy private key"
             )}
+          </Button>
+          <Button onClick={() => void openFolder()} disabled={busy}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+              <path d="M12 11v6M9.5 14.5 12 17l2.5-2.5" />
+            </svg>
+            {openedFolder ? "Folder opened" : "Open key folder"}
           </Button>
         </div>
 

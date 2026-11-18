@@ -14,6 +14,7 @@ import {
   extendExpiry,
   generateRevocation,
   keyDetails,
+  openKeyFolder,
 } from "../ipc";
 import {
   Badge,
@@ -279,13 +280,23 @@ export function DetailsPanel({
           <dt className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
             Fingerprint
           </dt>
-          <dd>
+          <dd className="flex flex-wrap items-center gap-2">
             <Fingerprint
               fpr={summary.fpr}
               onCopy={async () => {
                 await copyTextSecret(summary.fpr, "Fingerprint");
               }}
             />
+            <button
+              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+              onClick={() => void openKeyFolder(summary.fpr)}
+              title="Open the folder that holds this key's files in Windows Explorer"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+              </svg>
+              Open key folder
+            </button>
           </dd>
         </div>
 
