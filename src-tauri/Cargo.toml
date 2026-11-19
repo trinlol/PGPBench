@@ -1,6 +1,6 @@
 [package]
 name = "pocketpgp"
-version = "0.1.0"
+version = "0.1.1"
 description = "A minimal, modern, fully-offline OpenPGP app for Windows"
 authors = ["PocketPGP contributors"]
 edition = "2021"
@@ -19,6 +19,8 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-clipboard-manager = "2"
+tauri-plugin-process = "2"
+tauri-plugin-updater = "2"
 
 # --- OpenPGP engine: rPGP, the single source of crypto truth ---
 pgp = "0.21.1"

@@ -13,3 +13,6 @@ src-tauri/gen/schemas/
 *.local
 .DS_Store
 Thumbs.db
+
+# Update signing key (back this up yourself - losing it breaks future updates)
+update-key/

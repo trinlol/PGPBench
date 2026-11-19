@@ -78,6 +78,7 @@ export const saveSettings = (settings: Settings) =>
     theme: settings.theme,
     clipboard_clear_seconds: settings.clipboard_clear_seconds,
     default_profile: settings.default_profile,
+    check_updates_on_launch: settings.check_updates_on_launch,
   });
 
 // ---------------------------------------------------------------------------

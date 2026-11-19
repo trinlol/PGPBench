@@ -37,6 +37,7 @@ const settings: Settings = {
   theme: "system",
   clipboard_clear_seconds: 60,
   default_profile: "compatible",
+  check_updates_on_launch: true,
 };
 
 const keys: KeySummary[] = [
@@ -83,11 +84,14 @@ export async function save_settings(a: {
   theme: string;
   clipboard_clear_seconds: number;
   default_profile: string;
+  check_updates_on_launch?: boolean;
 }): Promise<Settings> {
-  settings.theme =
-    a.theme === "dark" ? "dark" : a.theme === "light" ? "light" : "system";
+  settings.theme = a.theme === "dark" ? "dark" : a.theme === "light" ? "light" : "system";
   settings.clipboard_clear_seconds = a.clipboard_clear_seconds;
   settings.default_profile = a.default_profile as Settings["default_profile"];
+  if (typeof a.check_updates_on_launch === "boolean") {
+    settings.check_updates_on_launch = a.check_updates_on_launch;
+  }
   return { ...settings };
 }
 

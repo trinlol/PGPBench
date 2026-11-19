@@ -44,6 +44,7 @@ pub fn app_init(state: State<AppState>) -> AppResult<serde_json::Value> {
                 "theme": store.settings.theme,
                 "clipboard_clear_seconds": store.settings.clipboard_clear_seconds,
                 "default_profile": store.settings.default_profile,
+                "check_updates_on_launch": store.settings.check_updates_on_launch,
             },
             "acl_ok": store.acl_note.is_none(),
             "acl_note": store.acl_note,
@@ -58,6 +59,7 @@ pub fn save_settings(
     theme: String,
     clipboard_clear_seconds: u64,
     default_profile: String,
+    check_updates_on_launch: Option<bool>,
 ) -> AppResult<serde_json::Value> {
     let mut store = state.0.lock().map_err(|_| AppError::internal("store lock poisoned"))?;
     store.settings.theme = match theme.as_str() {
@@ -68,12 +70,16 @@ pub fn save_settings(
     };
     store.settings.clipboard_clear_seconds = clipboard_clear_seconds.min(3600);
     store.settings.default_profile = Profile::parse(&default_profile)?.as_str().into();
+    if let Some(check) = check_updates_on_launch {
+        store.settings.check_updates_on_launch = check;
+    }
     store.save_settings()?;
 
     Ok(serde_json::json!({
         "theme": store.settings.theme,
         "clipboard_clear_seconds": store.settings.clipboard_clear_seconds,
         "default_profile": store.settings.default_profile,
+        "check_updates_on_launch": store.settings.check_updates_on_launch,
     }))
 }
 

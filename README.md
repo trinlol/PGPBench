@@ -19,10 +19,16 @@ Everything you need for personal daily OpenPGP use, nothing else:
   parses.
 - **Keys** — a flat, searchable list of your keyring. Generate keys
   (Ed25519/X25519 by default, RSA-3072/4096 under Advanced), always with a
-  chosen expiry; copy public/private to the clipboard in one click; change
-  passphrases, extend expiry, and generate revocation certificates.
-- **100 % offline.** No keyserver, no WKD, no update checks, no network
-  calls of any kind. Keys enter your keyring only by paste/import.
+  chosen expiry; copy public/private to the clipboard in one click; rename
+  keys, change passphrases, extend expiry, and generate revocation
+  certificates.
+- **Cryptography never touches the network.** No keyserver, no WKD — keys
+  enter your keyring only by paste/import. The app's single possible network
+  call is an optional, signature-verified update check against the project's
+  GitHub releases (on by default; disable it in Settings).
+- **In-app updates.** When a new release exists you get a notification with
+  one click: the update is downloaded from GitHub, verified against a
+  minisign public key baked into the app, installed, and the app relaunches.
 - **Private keys are passphrase-encrypted at rest.** No plaintext secret
   ever touches disk; passphrases live in memory only for the single
   operation that needs them.
@@ -38,7 +44,8 @@ Everything you need for personal daily OpenPGP use, nothing else:
   anywhere and run it. Requires the WebView2 Runtime (preinstalled on
   current Windows 10/11).
 
-Both are fully offline: the app makes no network calls, ever.
+The app's only possible network call is the optional, signature-verified
+update check - everything you do with your keys stays on this device.
 
 ## Using it
 
@@ -107,6 +114,14 @@ powershell -File tests\interop.ps1
 
 - **Single engine:** rPGP 0.21 (native Rust). No JS crypto, no Argon2-WASM,
   no `wasm-unsafe-eval` in the CSP.
+- **One network call, ever - and it's optional.** The app can perform a
+  single HTTPS request: the update check against this repository's GitHub
+  releases. Nothing is transmitted except the request itself - no telemetry,
+  no identifiers, no key material; and the downloaded update must verify
+  against a minisign public key baked into the app before it is installed.
+  The check runs on launch by default and can be disabled in Settings
+  (making the app fully air-gapped again). Everything cryptographic -
+  keys, encryption, verification - never touches the network.
 - **Decrypt-then-verify, always.** Verification outcomes show the signer's
   fingerprint and key source (*own key / imported / unknown*) — no invented
   trust model, no bare green checkmarks. A `write_secret` hint keeps

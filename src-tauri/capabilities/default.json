@@ -8,6 +8,8 @@
     "clipboard-manager:allow-read-text",
     "clipboard-manager:allow-write-text",
     "clipboard-manager:allow-write-secret",
-    "clipboard-manager:allow-clear"
+    "clipboard-manager:allow-clear",
+    "updater:default",
+    "process:allow-restart"
   ]
 }

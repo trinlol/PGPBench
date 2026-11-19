@@ -45,6 +45,14 @@ pub struct Settings {
     pub theme: String, // "light" | "dark"
     pub clipboard_clear_seconds: u64,
     pub default_profile: String, // "compatible" | "rfc9580"
+    /// Optional signature-verified update check on launch (the app's only
+    /// possible network call; see README security notes).
+    #[serde(default = "default_true")]
+    pub check_updates_on_launch: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 impl Default for Settings {
@@ -54,6 +62,7 @@ impl Default for Settings {
             theme: "system".into(),
             clipboard_clear_seconds: 60,
             default_profile: "compatible".into(),
+            check_updates_on_launch: true,
         }
     }
 }
@@ -89,7 +98,12 @@ impl Store {
 
         let settings = load_settings(&root)?;
 
-        let store = Store { root, keys_dir, settings, acl_note };
+        let store = Store {
+            root,
+            keys_dir,
+            settings,
+            acl_note,
+        };
         store.rebuild_index()?; // cache is rebuilt on every start
         Ok(store)
     }
@@ -260,7 +274,9 @@ fn check_acl(dir: &Path) -> AppResult<Option<String>> {
         .map_err(|e| AppError::io(format!("ACL verification failed to run: {e}")))?;
 
     let text = String::from_utf8_lossy(&output.stdout).to_lowercase();
-    let too_open = text.contains("everyone") || text.contains("builtin\\users") || text.contains("authenticated users");
+    let too_open = text.contains("everyone")
+        || text.contains("builtin\\users")
+        || text.contains("authenticated users");
     if too_open {
         return Ok(Some(
             "The PocketPGP key store is accessible to other users (unexpected ACL). \

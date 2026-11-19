@@ -211,6 +211,11 @@ export interface Settings {
   /** 0 disables auto-clear. Default 60. */
   clipboard_clear_seconds: number;
   default_profile: Profile;
+  /**
+   * Optional signature-verified update check on launch - the app's only
+   * possible network call. Can be disabled in Settings.
+   */
+  check_updates_on_launch: boolean;
 }
 
 export interface InitInfo {
