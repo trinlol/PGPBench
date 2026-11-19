@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { appInit, openKeyFolder, saveSettings } from "./ipc";
+import { appInit, isTauri, openKeyFolder, saveSettings } from "./ipc";
 import { checkForUpdates, installUpdate, type UpdateInfo } from "./updater";
 import {
   applyTheme,
@@ -32,6 +32,8 @@ export default function App() {
   const [clearSeconds, setClearSeconds] = useState(60);
   const [defaultProfile, setDefaultProfile] = useState<Profile>("compatible");
   const [checkUpdates, setCheckUpdates] = useState(true);
+  /** App version from the Tauri bundle (shown in Settings). */
+  const [appVersion, setAppVersion] = useState("...");
   /** Update banner state. */
   const [updateAvailable, setUpdateAvailable] = useState<UpdateInfo | null>(null);
   const [updating, setUpdating] = useState(false);
@@ -49,6 +51,17 @@ export default function App() {
         setCheckUpdates(info.settings.check_updates_on_launch);
       })
       .catch((e) => setError(String(e)));
+  }, []);
+
+  useEffect(() => {
+    if (!isTauri()) {
+      setAppVersion("browser preview");
+      return;
+    }
+    import("@tauri-apps/api/app")
+      .then(({ getVersion }) => getVersion())
+      .then(setAppVersion)
+      .catch(() => setAppVersion("unknown"));
   }, []);
 
   // Optional launch-time update check: the app's only network call, off by
@@ -342,7 +355,11 @@ export default function App() {
               <option value="rfc9580">RFC 9580 (v6, experimental)</option>
             </select>
           </Field>
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between border-t border-neutral-200 pt-3 dark:border-neutral-800">
+            <div className="text-[11px] leading-tight text-neutral-400 dark:text-neutral-500">
+              <div>PocketPGP {appVersion}</div>
+              <div>MIT OR Apache-2.0</div>
+            </div>
             <Button variant="primary" onClick={() => setSettingsOpen(false)}>
               Done
             </Button>
