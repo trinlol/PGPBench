@@ -1,7 +1,7 @@
 # PocketPGP
 
 [![CI](https://github.com/trinlol/PocketPGP/actions/workflows/ci.yml/badge.svg)](https://github.com/trinlol/PocketPGP/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v-release/trinlol/PocketPGP)](https://github.com/trinlol/PocketPGP/releases)
+[![Release](https://img.shields.io/github/v/release/trinlol/PocketPGP)](https://github.com/trinlol/PocketPGP/releases)
 
 A minimal, modern, fully-offline OpenPGP app for Windows — a clipboard-first
 alternative to Kleopatra, without the UI bloat.
