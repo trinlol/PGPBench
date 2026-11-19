@@ -24,6 +24,7 @@ import type {
   KeySummary,
   RevocationRequest,
   RevocationResult,
+  RenameKeyRequest,
   Settings,
   SignRequest,
   SignResult,
@@ -119,6 +120,13 @@ export const generateRevocation = (req: RevocationRequest) =>
 
 export const changePassphrase = (req: ChangePassphraseRequest) =>
   call<boolean>("change_passphrase", { args: req });
+
+/**
+ * Rename a key: adds a new primary User ID (self-signed) and demotes the old
+ * one - the OpenPGP-native way names work. The fingerprint never changes;
+ * peers see the new name only after you share the updated public key.
+ */
+export const renameKey = (req: RenameKeyRequest) => call<KeySummary>("rename_key", { args: req });
 
 export const extendExpiry = (req: ExtendExpiryRequest) =>
   call<KeySummary>("extend_expiry", { args: req });

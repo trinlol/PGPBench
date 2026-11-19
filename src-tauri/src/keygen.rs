@@ -13,7 +13,9 @@ use pgp::composed::{
     ArmorOptions, EncryptionCaps, KeyType, SecretKeyParamsBuilder, SignedSecretKey,
     SubkeyParamsBuilder,
 };
-use pgp::crypto::{aead::AeadAlgorithm, ecc_curve::ECCCurve, hash::HashAlgorithm, sym::SymmetricKeyAlgorithm};
+use pgp::crypto::{
+    aead::AeadAlgorithm, ecc_curve::ECCCurve, hash::HashAlgorithm, sym::SymmetricKeyAlgorithm,
+};
 use pgp::packet::{
     PacketTrait as _, RevocationCode, Signature, SignatureConfig, SignatureType, Subpacket,
     SubpacketData,
@@ -94,7 +96,10 @@ pub fn generate_key(
     let uid = build_uid(&opts.name, &opts.email, opts.comment.as_deref())?;
 
     let (primary_type, subkey_type) = match (opts.algo, version) {
-        (Algo::Ecc, KeyVersion::V4) => (KeyType::Ed25519Legacy, KeyType::ECDH(ECCCurve::Curve25519Legacy)),
+        (Algo::Ecc, KeyVersion::V4) => (
+            KeyType::Ed25519Legacy,
+            KeyType::ECDH(ECCCurve::Curve25519Legacy),
+        ),
         (Algo::Ecc, KeyVersion::V6) => (KeyType::Ed25519, KeyType::X25519),
         (Algo::Rsa3072, _) => (KeyType::Rsa(3072), KeyType::Rsa(3072)),
         (Algo::Rsa4096, _) => (KeyType::Rsa(4096), KeyType::Rsa(4096)),
@@ -153,9 +158,9 @@ pub fn generate_key(
         subkey_params.passphrase(Some(pw.to_string()));
     }
 
-    builder.subkeys(vec![subkey_params
-        .build()
-        .map_err(|e| AppError::input(format!("invalid subkey parameters: {e}")))?]);
+    builder.subkeys(vec![subkey_params.build().map_err(|e| {
+        AppError::input(format!("invalid subkey parameters: {e}"))
+    })?]);
 
     let params = builder
         .build()
@@ -198,7 +203,7 @@ pub fn generate_key(
     Ok((key, pub_armored, sec_armored, rev))
 }
 
-fn build_uid(name: &str, email: &str, comment: Option<&str>) -> AppResult<String> {
+pub fn build_uid(name: &str, email: &str, comment: Option<&str>) -> AppResult<String> {
     if name.trim().is_empty() {
         return Err(AppError::input("a name is required"));
     }
@@ -237,27 +242,24 @@ fn apply_expiry(
 
     // ---- v4: re-certify each user id ---------------------------------------
     for user in std::mem::take(&mut key.details.users) {
-        let Some(old) = user
-            .signatures
-            .iter()
-            .find(|s| {
-                matches!(
-                    s.typ(),
-                    Some(
-                        SignatureType::CertGeneric
-                            | SignatureType::CertPersona
-                            | SignatureType::CertCasual
-                            | SignatureType::CertPositive
-                    )
+        let Some(old) = user.signatures.iter().find(|s| {
+            matches!(
+                s.typ(),
+                Some(
+                    SignatureType::CertGeneric
+                        | SignatureType::CertPersona
+                        | SignatureType::CertCasual
+                        | SignatureType::CertPositive
                 )
-            })
-        else {
+            )
+        }) else {
             // Keep un-self-signed users untouched.
             key.details.users.push(user);
             continue;
         };
 
-        let mut config = SignatureConfig::from_key(&mut *rng, &key.primary_key, SignatureType::CertPositive)?;
+        let mut config =
+            SignatureConfig::from_key(&mut *rng, &key.primary_key, SignatureType::CertPositive)?;
         config.hashed_subpackets = refresh_expiry_subpackets(old, primary_created, expires_at);
         if is_v4_or_less {
             config.unhashed_subpackets = issuer_subpackets(&key.primary_key);
@@ -282,7 +284,8 @@ fn apply_expiry(
         key.details.direct_signatures = direct
             .into_iter()
             .map(|old| {
-                let mut config = SignatureConfig::from_key(&mut *rng, &key.primary_key, SignatureType::Key)?;
+                let mut config =
+                    SignatureConfig::from_key(&mut *rng, &key.primary_key, SignatureType::Key)?;
                 config.hashed_subpackets =
                     refresh_expiry_subpackets(&old, primary_created, expires_at);
                 config.sign_key(&key.primary_key, key_pw, &primary_pub)
@@ -296,8 +299,16 @@ fn apply_expiry(
         .into_iter()
         .map(|mut sub| {
             let sub_created = sub.key.created_at().as_secs() as u64;
-            resign_subkey(&mut sub, key, key_pw, sub_created, expires_at, rng, &primary_pub)
-                .map(|_| sub)
+            resign_subkey(
+                &mut sub,
+                key,
+                key_pw,
+                sub_created,
+                expires_at,
+                rng,
+                &primary_pub,
+            )
+            .map(|_| sub)
         })
         .collect::<pgp::errors::Result<Vec<_>>>()?;
 
@@ -306,8 +317,16 @@ fn apply_expiry(
         .into_iter()
         .map(|mut sub| {
             let sub_created = sub.key.created_at().as_secs() as u64;
-            resign_subkey(&mut sub, key, key_pw, sub_created, expires_at, rng, &primary_pub)
-                .map(|_| sub)
+            resign_subkey(
+                &mut sub,
+                key,
+                key_pw,
+                sub_created,
+                expires_at,
+                rng,
+                &primary_pub,
+            )
+            .map(|_| sub)
         })
         .collect::<pgp::errors::Result<Vec<_>>>()?;
 
@@ -365,12 +384,14 @@ fn resign_subkey<C: SubkeyLike>(
     };
 
     // Phase 2: produce the fresh binding (borrows sub immutably).
-    let mut config = SignatureConfig::from_key(&mut *rng, &key.primary_key, SignatureType::SubkeyBinding)?;
+    let mut config =
+        SignatureConfig::from_key(&mut *rng, &key.primary_key, SignatureType::SubkeyBinding)?;
     config.hashed_subpackets = hashed;
     if key.primary_key.version() <= KeyVersion::V4 {
         config.unhashed_subpackets = issuer_subpackets(&key.primary_key);
     }
-    let sig = config.sign_subkey_binding(&key.primary_key, primary_pub, key_pw, sub.public_packet())?;
+    let sig =
+        config.sign_subkey_binding(&key.primary_key, primary_pub, key_pw, sub.public_packet())?;
 
     // Phase 3: swap it in (mutable borrow).
     *sub.signatures_mut() = vec![sig];
@@ -396,20 +417,138 @@ fn refresh_expiry_subpackets(
             && !matches!(p.data, SubpacketData::KeyExpirationTime(_))
     });
 
-    out.push(Subpacket::regular(SubpacketData::SignatureCreationTime(Timestamp::now())).expect("valid subpacket"));
+    out.push(
+        Subpacket::regular(SubpacketData::SignatureCreationTime(Timestamp::now()))
+            .expect("valid subpacket"),
+    );
     if let Some(exp) = expires_at {
         // OpenPGP stores expiry as a u32-seconds value relative to creation.
         let secs = exp.saturating_sub(created).min(u32::MAX as u64) as u32;
-        out.push(Subpacket::regular(SubpacketData::KeyExpirationTime(
-            pgp::types::Duration::from_secs(secs),
-        ))
-        .expect("valid subpacket"));
+        out.push(
+            Subpacket::regular(SubpacketData::KeyExpirationTime(
+                pgp::types::Duration::from_secs(secs),
+            ))
+            .expect("valid subpacket"),
+        );
     }
     out
 }
 
 fn issuer_subpackets(primary: &pgp::packet::SecretKey) -> Vec<Subpacket> {
-    vec![Subpacket::regular(SubpacketData::IssuerKeyId(primary.legacy_key_id())).expect("valid subpacket")]
+    vec![
+        Subpacket::regular(SubpacketData::IssuerKeyId(primary.legacy_key_id()))
+            .expect("valid subpacket"),
+    ]
+}
+
+fn is_cert_sig(s: &pgp::packet::Signature) -> bool {
+    matches!(
+        s.typ(),
+        Some(
+            SignatureType::CertGeneric
+                | SignatureType::CertPersona
+                | SignatureType::CertCasual
+                | SignatureType::CertPositive
+        )
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Rename (new primary User ID)
+// ---------------------------------------------------------------------------
+
+/// Rename a key: add a freshly self-signed User ID marked as primary and
+/// demote the previous one - the OpenPGP-native way names work, matching
+/// `gpg --quick-add-uid`. The fingerprint and secret material are untouched;
+/// peers only see the new name once you share the updated public key.
+///
+/// The new UID's self-certification carries over the key's existing metadata
+/// (key flags, features, algorithm preferences) so it advertises exactly the
+/// same properties as the key itself.
+pub fn rename_key(key: &mut SignedSecretKey, key_pw: &Password, uid: String) -> AppResult<()> {
+    let mut rng = rand::thread_rng();
+    let primary_pub = key.primary_key.public_key().clone();
+    let is_v4_or_less = key.primary_key.version() <= KeyVersion::V4;
+
+    let metadata: Vec<Subpacket> = key
+        .details
+        .users
+        .iter()
+        .flat_map(|u| u.signatures.iter())
+        .find(|s| is_cert_sig(s))
+        .and_then(|s| s.config())
+        .map(|c| c.hashed_subpackets().cloned().collect())
+        .unwrap_or_default();
+    if metadata.is_empty() {
+        return Err(AppError::crypto(
+            "the key has no self-signature to carry preferences from",
+        ));
+    }
+
+    // Certify a UID packet with the key's metadata, optionally as primary.
+    // (Closures capture disjoint fields, so this borrows the key immutably
+    // while the user list is rebuilt below.)
+    let mut certify = |uid_pkt: &pgp::packet::UserId,
+                       with_primary: bool|
+     -> pgp::errors::Result<pgp::packet::Signature> {
+        let mut config =
+            SignatureConfig::from_key(&mut rng, &key.primary_key, SignatureType::CertPositive)?;
+        let mut hashed: Vec<Subpacket> = metadata
+            .iter()
+            .filter(|p| {
+                !matches!(p.data, SubpacketData::IsPrimary(_))
+                    && !matches!(p.data, SubpacketData::SignatureCreationTime(_))
+            })
+            .cloned()
+            .collect();
+        hashed.push(Subpacket::regular(SubpacketData::SignatureCreationTime(
+            Timestamp::now(),
+        ))?);
+        if with_primary {
+            hashed.push(Subpacket::regular(SubpacketData::IsPrimary(true))?);
+        }
+        config.hashed_subpackets = hashed;
+        if is_v4_or_less {
+            config.unhashed_subpackets = issuer_subpackets(&key.primary_key);
+        }
+        config.sign_certification(
+            &key.primary_key,
+            &primary_pub,
+            key_pw,
+            uid_pkt.tag(),
+            uid_pkt,
+        )
+    };
+
+    let new_uid_pkt = pgp::packet::UserId::from_str(Default::default(), uid)
+        .map_err(|e| AppError::crypto(format!("could not build the new user id: {e}")))?;
+
+    let old_users = std::mem::take(&mut key.details.users);
+    let mut users = Vec::with_capacity(old_users.len() + 1);
+
+    // The new primary UID goes first (it is what every listing displays).
+    let new_sig = certify(&new_uid_pkt, true)
+        .map_err(|e| AppError::crypto(format!("signing the new name failed: {e}")))?;
+    users.push(new_uid_pkt.into_signed(new_sig));
+
+    // Existing UIDs are re-signed without the primary flag; UIDs without a
+    // self-certification are kept untouched.
+    for user in old_users {
+        let has_self_sig = user.signatures.iter().any(|s| is_cert_sig(s));
+        if !has_self_sig {
+            users.push(user);
+            continue;
+        }
+        let uid_pkt = user.id;
+        let sig = certify(&uid_pkt, false)
+            .map_err(|e| AppError::crypto(format!("re-signing the previous name failed: {e}")))?;
+        users.push(uid_pkt.into_signed(sig));
+    }
+    key.details.users = users;
+
+    key.verify_bindings()
+        .map_err(|e| AppError::crypto(format!("renamed key failed self-verification: {e}")))?;
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------
@@ -452,10 +591,13 @@ fn create_revocation_inner(
     use pgp::armor::{write as armor_write, BlockType};
     use pgp::composed::DetachedSignature;
 
-    let mut config = SignatureConfig::from_key(&mut *rng, &key.primary_key, SignatureType::KeyRevocation)?;
+    let mut config =
+        SignatureConfig::from_key(&mut *rng, &key.primary_key, SignatureType::KeyRevocation)?;
     config.hashed_subpackets = vec![
         Subpacket::regular(SubpacketData::SignatureCreationTime(Timestamp::now()))?,
-        Subpacket::regular(SubpacketData::IssuerFingerprint(key.primary_key.fingerprint()))?,
+        Subpacket::regular(SubpacketData::IssuerFingerprint(
+            key.primary_key.fingerprint(),
+        ))?,
         Subpacket::regular(SubpacketData::RevocationReason(
             code,
             text.unwrap_or_default().into_bytes().into(),
@@ -548,10 +690,16 @@ pub fn extend_expiry(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pgp::composed::{CleartextSignedMessage, Deserializable, DetachedSignature, Message, MessageBuilder};
+    use pgp::composed::{
+        CleartextSignedMessage, Deserializable, DetachedSignature, Message, MessageBuilder,
+    };
     use pgp::crypto::sym::SymmetricKeyAlgorithm;
 
-    fn opts<'a>(profile: Profile, expires_at: Option<u64>, passphrase: Option<&'a str>) -> GenerateOptions<'a> {
+    fn opts<'a>(
+        profile: Profile,
+        expires_at: Option<u64>,
+        passphrase: Option<&'a str>,
+    ) -> GenerateOptions<'a> {
         GenerateOptions {
             name: "Pocket Tester".into(),
             email: "pocket@example.com".into(),
@@ -648,8 +796,11 @@ mod tests {
         let mut rng = rand::thread_rng();
         let mut b = MessageBuilder::from_bytes("t.txt", b"hello roundtrip".to_vec())
             .seipd_v1(&mut rng, SymmetricKeyAlgorithm::AES256);
-        b.encrypt_to_key(&mut rng, &pubkey.public_subkeys[0]).unwrap();
-        let armored = b.to_armored_string(&mut rng, ArmorOptions::default()).unwrap();
+        b.encrypt_to_key(&mut rng, &pubkey.public_subkeys[0])
+            .unwrap();
+        let armored = b
+            .to_armored_string(&mut rng, ArmorOptions::default())
+            .unwrap();
 
         let (msg, _) = Message::from_string(&armored).unwrap();
         let pw = Password::from("pw".to_string());
@@ -670,6 +821,68 @@ mod tests {
 
         let (csm, _) = CleartextSignedMessage::from_string(&signed).unwrap();
         csm.verify(&sec.to_public_key().primary_key).unwrap();
+    }
+
+    #[test]
+    fn rename_key_replaces_primary_uid() {
+        let (mut sec, _, _, _) =
+            generate_key(&opts(Profile::Compatible, None, Some("pw"))).unwrap();
+        let pw = Password::from("pw".to_string());
+
+        rename_key(&mut sec, &pw, "Renamed Person <renamed@example.com>".into()).unwrap();
+        sec.verify_bindings().unwrap();
+
+        // New name first, old name kept but demoted.
+        assert_eq!(sec.details.users.len(), 2);
+        assert_eq!(
+            sec.details.users[0].id.as_str().unwrap(),
+            "Renamed Person <renamed@example.com>"
+        );
+
+        // Armor round-trip preserves the new primary order.
+        let armored = sec.to_armored_string(ArmorOptions::default()).unwrap();
+        let (re, _) = SignedSecretKey::from_string(&armored).unwrap();
+        re.verify_bindings().unwrap();
+        assert_eq!(
+            re.details.users[0].id.as_str().unwrap(),
+            "Renamed Person <renamed@example.com>"
+        );
+        assert_eq!(
+            re.details.users[1].id.as_str().unwrap(),
+            "Pocket Tester (test key) <pocket@example.com>"
+        );
+
+        // Exactly one UID carries the primary flag: the new one.
+        let is_primary = |u: &pgp::types::SignedUser| {
+            u.signatures.iter().any(|s| {
+                s.config()
+                    .map(|c| {
+                        c.hashed_subpackets()
+                            .any(|p| matches!(p.data, SubpacketData::IsPrimary(true)))
+                    })
+                    .unwrap_or(false)
+            })
+        };
+        assert!(is_primary(&re.details.users[0]));
+        assert!(!is_primary(&re.details.users[1]));
+
+        // The new UID's cert carries the key flags (metadata was inherited).
+        assert!(crate::pgputil::key_flags_of_sig(&re.details.users[0].signatures[0]).is_some());
+
+        // Encryption still works after the rename.
+        let mut b = MessageBuilder::from_bytes("t.txt", b"after rename".to_vec())
+            .seipd_v1(&mut rand::thread_rng(), SymmetricKeyAlgorithm::AES256);
+        b.encrypt_to_key(
+            &mut rand::thread_rng(),
+            &re.to_public_key().public_subkeys[0],
+        )
+        .unwrap();
+        let armored_msg = b
+            .to_armored_string(&mut rand::thread_rng(), ArmorOptions::default())
+            .unwrap();
+        let (mut msg, _) = Message::from_string(&armored_msg).unwrap();
+        let mut dec = msg.decrypt(&pw, &re).unwrap();
+        assert_eq!(dec.as_data_string().unwrap(), "after rename");
     }
 
     #[test]
@@ -707,14 +920,16 @@ mod tests {
                 .to_public_key()
                 .to_armored_string(ArmorOptions::default())
                 .unwrap();
-            let sec_armored_out = sec
-                .to_armored_string(ArmorOptions::default())
+            let sec_armored_out = sec.to_armored_string(ArmorOptions::default()).unwrap();
+            st.save_key(&fpr, &pub_armored, Some(&sec_armored_out), None)
                 .unwrap();
-            st.save_key(&fpr, &pub_armored, Some(&sec_armored_out), None).unwrap();
         }
 
         let (text, sigs, _) = crate::msgops::decrypt(&st, &armored, Some("pw")).unwrap();
-        assert!(text.contains("hello with signature"), "plaintext mismatch: {text:?}");
+        assert!(
+            text.contains("hello with signature"),
+            "plaintext mismatch: {text:?}"
+        );
         assert_eq!(sigs.len(), 1, "expected one signature");
         assert!(sigs[0].valid, "embedded signature did not verify");
         assert_eq!(sigs[0].key_source, "own");
@@ -754,9 +969,12 @@ mod tests {
 
     #[test]
     fn extend_expiry_rewrites_self_signature() {
-        let (_, pub_armored, sec_armored, _) =
-            generate_key(&opts(Profile::Compatible, Some(crate::pgputil::now_secs() + 3600), Some("pw")))
-                .unwrap();
+        let (_, pub_armored, sec_armored, _) = generate_key(&opts(
+            Profile::Compatible,
+            Some(crate::pgputil::now_secs() + 3600),
+            Some("pw"),
+        ))
+        .unwrap();
         let (mut sec, _) = SignedSecretKey::from_string(&sec_armored).unwrap();
         let (pubkey0, _) = pgp::composed::SignedPublicKey::from_string(&pub_armored).unwrap();
         let exp0 = crate::pgputil::primary_expiry(&pubkey0).unwrap();
@@ -771,4 +989,3 @@ mod tests {
         assert!(exp1 > exp0);
     }
 }
-

@@ -327,6 +327,21 @@ export async function change_passphrase(): Promise<boolean> {
   return true;
 }
 
+export async function rename_key(a: {
+  args: { fpr: string; name: string; email: string; comment: string | null; passphrase: string | null };
+}): Promise<KeySummary> {
+  await sleep(250);
+  const key = keys.find((k) => k.fpr === a.args.fpr.toUpperCase());
+  if (!key) throw new Error("no such key");
+  if (!a.args.name.trim()) throw new Error("a name is required");
+  let uid = a.args.name.trim();
+  if (a.args.comment && a.args.comment.trim()) uid += ` (${a.args.comment.trim()})`;
+  if (a.args.email.trim()) uid += ` <${a.args.email.trim()}>`;
+  // New primary first, old demoted.
+  key.uids = [uid, ...key.uids];
+  return { ...key };
+}
+
 export async function extend_expiry(a: { args: { fpr: string; expires: string | null } }): Promise<KeySummary> {
   await sleep(200);
   const key = keys.find((k) => k.fpr === a.args.fpr.toUpperCase());

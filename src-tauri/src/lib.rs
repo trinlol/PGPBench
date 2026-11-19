@@ -46,6 +46,7 @@ pub fn run() {
             commands::verify,
             commands::generate_revocation,
             commands::change_passphrase,
+            commands::rename_key,
             commands::extend_expiry,
             commands::copy_key_to_clipboard,
             commands::copy_text_secret,

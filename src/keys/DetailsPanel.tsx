@@ -15,6 +15,7 @@ import {
   generateRevocation,
   keyDetails,
   openKeyFolder,
+  renameKey,
 } from "../ipc";
 import {
   Badge,
@@ -30,7 +31,7 @@ import {
   inputClass,
 } from "../components/ui";
 import { PassphraseModal } from "../components/PassphraseModal";
-import { keyStatus, todayIso, trimmedOrNull } from "./keyUtils";
+import { keyStatus, parseUid, todayIso, trimmedOrNull } from "./keyUtils";
 
 const CAPABILITY_TITLES: Record<string, string> = {
   S: "Sign",
@@ -46,7 +47,7 @@ const REVOCATION_REASONS: { value: RevocationReason; label: string }[] = [
   { value: "retired", label: "Key is retired" },
 ];
 
-type PassPrompt = "extend" | "revoke";
+type PassPrompt = "extend" | "revoke" | "rename";
 
 export function DetailsPanel({
   fpr,
@@ -167,6 +168,33 @@ export function DetailsPanel({
     setPassPrompt("extend");
   };
 
+  // --- rename (new primary User ID) ----------------------------------------
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameName, setRenameName] = useState("");
+  const [renameEmail, setRenameEmail] = useState("");
+  const [renameComment, setRenameComment] = useState("");
+  const [renameError, setRenameError] = useState<string | null>(null);
+
+  const openRename = () => {
+    // Prefill from the current primary UID.
+    const parsed = parseUid(details?.summary.uids[0] ?? "");
+    setRenameName(parsed.name ?? "");
+    setRenameEmail(parsed.email ?? "");
+    setRenameComment("");
+    setRenameError(null);
+    setRenameOpen(true);
+  };
+
+  const requestRename = () => {
+    if (!renameName.trim()) {
+      setRenameError("Enter a name.");
+      return;
+    }
+    setRenameError(null);
+    setPassError(null);
+    setPassPrompt("rename");
+  };
+
   // --- revocation certificate ---------------------------------------------
   const [revokeOpen, setRevokeOpen] = useState(false);
   const [reason, setReason] = useState<RevocationReason>("none");
@@ -198,6 +226,21 @@ export function DetailsPanel({
         setPassPrompt(null);
         setExtendOpen(false);
         setNotice(`Expiry updated: ${formatDate(updated.expires)}.`);
+        reload();
+        onChanged();
+      } else if (passPrompt === "rename") {
+        await renameKey({
+          fpr,
+          name: renameName,
+          email: renameEmail,
+          comment: trimmedOrNull(renameComment),
+          passphrase: pw,
+        });
+        setPassPrompt(null);
+        setRenameOpen(false);
+        setNotice(
+          "Key renamed. The fingerprint is unchanged - share your updated public key so peers see the new name.",
+        );
         reload();
         onChanged();
       } else if (passPrompt === "revoke") {
@@ -352,6 +395,9 @@ export function DetailsPanel({
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <Button onClick={openChangePw}>Change passphrase</Button>
+              <Button onClick={() => (renameOpen ? setRenameOpen(false) : openRename())}>
+                Rename
+              </Button>
               <Button onClick={() => (extendOpen ? setExtendOpen(false) : openExtend())}>
                 Extend expiry
               </Button>
@@ -359,6 +405,50 @@ export function DetailsPanel({
                 Generate revocation certificate
               </Button>
             </div>
+
+            {renameOpen ? (
+              <div className="rounded-lg border border-neutral-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-900">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Field label="Name">
+                    <input
+                      className={inputClass}
+                      value={renameName}
+                      onChange={(e) => setRenameName(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Email">
+                    <input
+                      className={inputClass}
+                      value={renameEmail}
+                      onChange={(e) => setRenameEmail(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Comment">
+                    <input
+                      className={inputClass}
+                      value={renameComment}
+                      onChange={(e) => setRenameComment(e.target.value)}
+                    />
+                  </Field>
+                </div>
+                <div className="mt-3 flex justify-end gap-2">
+                  <Button variant="primary" onClick={requestRename}>
+                    Apply rename
+                  </Button>
+                  <Button variant="ghost" onClick={() => setRenameOpen(false)}>
+                    Cancel
+                  </Button>
+                </div>
+                {renameError ? (
+                  <p className="mt-2 text-xs text-red-600 dark:text-red-400">{renameError}</p>
+                ) : (
+                  <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                    Adds a new primary User ID signed by your key; the previous name is kept but
+                    demoted. The fingerprint never changes. Requires the current passphrase.
+                  </p>
+                )}
+              </div>
+            ) : null}
 
             {extendOpen ? (
               <div className="rounded-lg border border-neutral-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-900">
@@ -540,11 +630,15 @@ export function DetailsPanel({
         explain={
           passPrompt === "extend"
             ? `Confirm the current passphrase to re-sign the key with a new expiry (${extendNever ? "never" : extendDate || "no date"}). Leave empty if the key has no passphrase.`
-            : `Confirm the current passphrase to sign this revocation certificate (reason: ${
-                REVOCATION_REASONS.find((r) => r.value === reason)?.label ?? reason
-              }). Leave empty if the key has no passphrase.`
+            : passPrompt === "rename"
+              ? "Confirm the current passphrase to sign the new name. Leave empty if the key has no passphrase."
+              : `Confirm the current passphrase to sign this revocation certificate (reason: ${
+                  REVOCATION_REASONS.find((r) => r.value === reason)?.label ?? reason
+                }). Leave empty if the key has no passphrase.`
         }
-        confirmLabel={passPrompt === "extend" ? "Update expiry" : "Create certificate"}
+        confirmLabel={
+          passPrompt === "extend" ? "Update expiry" : passPrompt === "rename" ? "Rename key" : "Create certificate"
+        }
         busy={passBusy}
         error={passError}
         allowEmpty={true}

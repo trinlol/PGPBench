@@ -360,6 +360,56 @@ pub fn open_key_folder(state: State<AppState>, fpr: Option<String>) -> AppResult
 }
 
 #[derive(serde::Deserialize)]
+pub struct RenameKeyArgs {
+    pub fpr: String,
+    pub name: String,
+    /// May be empty.
+    pub email: String,
+    /// May be empty or absent.
+    pub comment: Option<String>,
+    pub passphrase: Option<String>,
+}
+
+/// Rename a key: add a new primary User ID (self-signed) and demote the old
+/// one - the OpenPGP-native way names work. Fingerprint and secret material
+/// are untouched; peers only see the new name once the updated public key is
+/// shared with them.
+#[tauri::command]
+pub fn rename_key(
+    state: State<AppState>,
+    mut args: RenameKeyArgs,
+) -> AppResult<serde_json::Value> {
+    let uid = keygen::build_uid(&args.name, &args.email, args.comment.as_deref())?;
+
+    let summary = with_store(&state, |store| {
+        use pgp::composed::ArmorOptions;
+        let mut key = store.load_secret(&args.fpr.to_uppercase())?;
+        let pw = args
+            .passphrase
+            .clone()
+            .map(pgp::types::Password::from)
+            .unwrap_or_else(pgp::types::Password::empty);
+        keygen::rename_key(&mut key, &pw, uid)?;
+
+        let pub_armored = key
+            .to_public_key()
+            .to_armored_string(ArmorOptions::default())
+            .map_err(AppError::from)?;
+        let sec_armored = key
+            .to_armored_string(ArmorOptions::default())
+            .map_err(AppError::from)?;
+        // Keep an existing revocation certificate; nothing else to preserve.
+        store.save_key(&args.fpr.to_uppercase(), &pub_armored, Some(&sec_armored), None)?;
+        store.rebuild_index()?;
+
+        let pubkey = store.load_public(&args.fpr.to_uppercase())?;
+        Ok(summary_json(store, &pubkey))
+    })?;
+    args.passphrase.zeroize();
+    Ok(summary)
+}
+
+#[derive(serde::Deserialize)]
 pub struct DeleteArgs {
     pub fpr: String,
     /// Confirmation token typed/accepted in the UI ("delete").

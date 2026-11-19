@@ -7,9 +7,9 @@
 
 use std::io::Read;
 
-use pocketpgp_lib::{armorfix, keygen, msgops, pgputil, store};
 use pgp::composed::{ArmorOptions, Deserializable, SignedPublicKey, SignedSecretKey};
 use pgp::types::KeyDetails as _;
+use pocketpgp_lib::{armorfix, keygen, msgops, pgputil, store};
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -77,14 +77,13 @@ fn run(args: &[String]) -> Result<String, String> {
             let email = args.get(2).ok_or("generate: email")?;
             let algo = keygen::Algo::parse(args.get(3).map(|s| s.as_str()).unwrap_or("ecc"))
                 .map_err(|e| e.to_string())?;
-            let profile = keygen::Profile::parse(args.get(4).map(|s| s.as_str()).unwrap_or("compatible"))
-                .map_err(|e| e.to_string())?;
+            let profile =
+                keygen::Profile::parse(args.get(4).map(|s| s.as_str()).unwrap_or("compatible"))
+                    .map_err(|e| e.to_string())?;
             let passphrase = args.get(5).cloned().filter(|p| !p.is_empty());
             // 0 (or absent) = never expire.
-            let expiry_days: Option<u64> = args
-                .get(6)
-                .and_then(|d| d.parse().ok())
-                .filter(|d| *d > 0);
+            let expiry_days: Option<u64> =
+                args.get(6).and_then(|d| d.parse().ok()).filter(|d| *d > 0);
             let expires_at = expiry_days.map(|d| pgputil::now_secs() + d * 86400);
             let opts = keygen::GenerateOptions {
                 name: name.clone(),
@@ -107,15 +106,18 @@ fn run(args: &[String]) -> Result<String, String> {
 
         Some("export-public") => {
             let fpr = args.get(1).ok_or("export-public: fpr")?;
-            st.read_armored_file(&st.pub_path(fpr)).map_err(|e| e.to_string())
+            st.read_armored_file(&st.pub_path(fpr))
+                .map_err(|e| e.to_string())
         }
         Some("export-secret") => {
             let fpr = args.get(1).ok_or("export-secret: fpr")?;
-            st.read_armored_file(&st.sec_path(fpr)).map_err(|e| e.to_string())
+            st.read_armored_file(&st.sec_path(fpr))
+                .map_err(|e| e.to_string())
         }
         Some("export-revocation") => {
             let fpr = args.get(1).ok_or("export-revocation: fpr")?;
-            st.read_armored_file(&st.rev_path(fpr)).map_err(|e| e.to_string())
+            st.read_armored_file(&st.rev_path(fpr))
+                .map_err(|e| e.to_string())
         }
 
         Some("import") => {
@@ -124,6 +126,31 @@ fn run(args: &[String]) -> Result<String, String> {
             let _ = fpr;
             st.rebuild_index().map_err(|e| e.to_string())?;
             Ok("imported".into())
+        }
+
+        Some("rename") => {
+            // rename <fpr> <passphrase> <full new uid>
+            let fpr = args.get(1).ok_or("rename: fpr")?;
+            let pw = args.get(2).cloned().unwrap_or_default();
+            let uid = args.iter().skip(3).cloned().collect::<Vec<_>>().join(" ");
+            if uid.trim().is_empty() {
+                return Err("rename: new uid required".into());
+            }
+            use pgp::composed::ArmorOptions;
+            let mut key = st.load_secret(fpr).map_err(|e| e.to_string())?;
+            let pw = pgp::types::Password::from(pw);
+            keygen::rename_key(&mut key, &pw, uid).map_err(|e| e.to_string())?;
+            let pub_armored = key
+                .to_public_key()
+                .to_armored_string(ArmorOptions::default())
+                .map_err(|e| e.to_string())?;
+            let sec_armored = key
+                .to_armored_string(ArmorOptions::default())
+                .map_err(|e| e.to_string())?;
+            st.save_key(&fpr.to_uppercase(), &pub_armored, Some(&sec_armored), None)
+                .map_err(|e| e.to_string())?;
+            st.rebuild_index().map_err(|e| e.to_string())?;
+            Ok("renamed".into())
         }
 
         Some("list") => {
@@ -145,8 +172,9 @@ fn run(args: &[String]) -> Result<String, String> {
 
         Some("encrypt") => {
             // encrypt <profile> <fpr>... (message on stdin, optional +sign:<fpr>:<passphrase>)
-            let profile = keygen::Profile::parse(args.get(1).map(|s| s.as_str()).unwrap_or("compatible"))
-                .map_err(|e| e.to_string())?;
+            let profile =
+                keygen::Profile::parse(args.get(1).map(|s| s.as_str()).unwrap_or("compatible"))
+                    .map_err(|e| e.to_string())?;
             let mut recipients = Vec::new();
             let mut sign_with: Option<(String, String)> = None;
             for a in args
@@ -169,19 +197,27 @@ fn run(args: &[String]) -> Result<String, String> {
                 keys.push(st.load_public(fpr).map_err(|e| e.to_string())?);
             }
             let (sign_key, sign_pw) = match &sign_with {
-                Some((fpr, pw)) => (Some(st.load_secret(fpr).map_err(|e| e.to_string())?), pw.clone()),
+                Some((fpr, pw)) => (
+                    Some(st.load_secret(fpr).map_err(|e| e.to_string())?),
+                    pw.clone(),
+                ),
                 None => (None, String::new()),
             };
             let params = msgops::EncryptParams {
                 message,
                 recipients: keys,
                 sign_with: sign_key.as_ref(),
-                sign_passphrase: if sign_key.is_some() { Some(sign_pw) } else { None },
+                sign_passphrase: if sign_key.is_some() {
+                    Some(sign_pw)
+                } else {
+                    None
+                },
                 profile,
                 armor: true,
                 compress: false,
             };
-            let (output, _binary, warnings) = msgops::encrypt(&params).map_err(|e| e.to_string())?;
+            let (output, _binary, warnings) =
+                msgops::encrypt(&params).map_err(|e| e.to_string())?;
             for w in warnings {
                 eprintln!("WARNING: {w}");
             }
@@ -195,8 +231,8 @@ fn run(args: &[String]) -> Result<String, String> {
                 .filter(|a| !a.starts_with("--in=") && !a.starts_with("--out="))
                 .cloned();
             let input = input_text(args);
-            let (text, sigs, warnings) = msgops::decrypt(&st, &input, passphrase.as_deref())
-                .map_err(|e| e.to_string())?;
+            let (text, sigs, warnings) =
+                msgops::decrypt(&st, &input, passphrase.as_deref()).map_err(|e| e.to_string())?;
             for w in warnings {
                 eprintln!("WARNING: {w}");
             }
@@ -233,8 +269,8 @@ fn run(args: &[String]) -> Result<String, String> {
             } else {
                 (input_text(args), None)
             };
-            let (signed_text, sigs, warnings) = msgops::verify(&st, &input, detached.as_deref())
-                .map_err(|e| e.to_string())?;
+            let (signed_text, sigs, warnings) =
+                msgops::verify(&st, &input, detached.as_deref()).map_err(|e| e.to_string())?;
             for w in warnings {
                 eprintln!("WARNING: {w}");
             }
@@ -255,7 +291,8 @@ fn run(args: &[String]) -> Result<String, String> {
             // copy-private <fpr> - reads the armored secret from the store
             // (harness-only; the app never crosses this boundary.)
             let fpr = args.get(1).ok_or("copy-private: fpr")?;
-            st.read_armored_file(&st.sec_path(fpr)).map_err(|e| e.to_string())
+            st.read_armored_file(&st.sec_path(fpr))
+                .map_err(|e| e.to_string())
         }
 
         Some(other) => Err(format!("unknown command: {other}")),

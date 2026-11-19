@@ -187,6 +187,17 @@ export interface ChangePassphraseRequest {
   new_passphrase: string | null;
 }
 
+export interface RenameKeyRequest {
+  fpr: string;
+  name: string;
+  /** May be empty. */
+  email: string;
+  /** May be empty or absent. */
+  comment: string | null;
+  /** Passphrase for the re-signing operation; never persisted. */
+  passphrase: string | null;
+}
+
 export interface ExtendExpiryRequest {
   fpr: string;
   passphrase: string | null;
