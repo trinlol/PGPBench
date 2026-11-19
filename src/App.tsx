@@ -13,6 +13,7 @@ import {
   type ThemePref,
 } from "./theme";
 import type { InitInfo, Profile, Settings } from "./types";
+import { errText } from "./errors";
 import { Banner, Button, Field, inputClass, Modal, Spinner } from "./components/ui";
 import { Workbench } from "./workbench/Workbench";
 import { Keys } from "./keys/Keys";
@@ -100,7 +101,7 @@ export default function App() {
       });
       // On success the app relaunches; nothing after this line runs.
     } catch (err) {
-      setUpdateError(String(err));
+      setUpdateError(errText(err));
       setUpdating(false);
       setUpdateProgress(null);
     }

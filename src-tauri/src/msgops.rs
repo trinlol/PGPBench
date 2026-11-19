@@ -33,7 +33,9 @@ pub struct SignatureInfo {
 }
 
 fn sig_fpr(sig: &Signature) -> Option<String> {
-    sig.issuer_fingerprint().first().map(|f| pgputil::fpr_hex(f))
+    sig.issuer_fingerprint()
+        .first()
+        .map(|f| pgputil::fpr_hex(f))
 }
 
 fn unknown_info(sig: &Signature) -> SignatureInfo {
@@ -57,7 +59,11 @@ pub enum VerifierPacket<'a> {
 
 impl VerifierPacket<'_> {
     /// Verify a detached signature over `content` with this packet.
-    pub fn verify_detached(&self, sig: &DetachedSignature, content: &[u8]) -> pgp::errors::Result<()> {
+    pub fn verify_detached(
+        &self,
+        sig: &DetachedSignature,
+        content: &[u8],
+    ) -> pgp::errors::Result<()> {
         match self {
             VerifierPacket::Primary(k) => sig.verify(*k, content),
             VerifierPacket::Sub(k) => sig.verify(*k, content),
@@ -104,7 +110,11 @@ impl VerifierSet {
                 slots.push((i, Some(s)));
             }
         }
-        Ok(VerifierSet { keys, has_secret, slots })
+        Ok(VerifierSet {
+            keys,
+            has_secret,
+            slots,
+        })
     }
 
     /// Concrete verifier packet for slot `idx`.
@@ -122,7 +132,9 @@ impl VerifierSet {
             .iter()
             .map(|(ki, si)| match si {
                 None => &self.keys[*ki].primary_key as &(dyn pgp::types::VerifyingKey + '_),
-                Some(s) => &self.keys[*ki].public_subkeys[*s].key as &(dyn pgp::types::VerifyingKey + '_),
+                Some(s) => {
+                    &self.keys[*ki].public_subkeys[*s].key as &(dyn pgp::types::VerifyingKey + '_)
+                }
             })
             .collect()
     }
@@ -134,10 +146,13 @@ impl VerifierSet {
         let uid = key.details.users.first().and_then(|u| u.id.as_str());
         let revoked = pgputil::is_revoked(key);
         SignatureInfo {
-            fpr: sig_fpr(sig)
-                .unwrap_or_else(|| pgputil::fpr_hex(&key.primary_key.fingerprint())),
+            fpr: sig_fpr(sig).unwrap_or_else(|| pgputil::fpr_hex(&key.primary_key.fingerprint())),
             key_uid: uid.map(str::to_string),
-            key_source: if self.has_secret[ki] { "own" } else { "imported" },
+            key_source: if self.has_secret[ki] {
+                "own"
+            } else {
+                "imported"
+            },
             signed_at: sig.created().map(|t| t.as_secs() as u64),
             valid: true,
             revoked,
@@ -255,10 +270,13 @@ pub fn encrypt(params: &EncryptParams) -> AppResult<(String, bool, Vec<String>)>
         Profile::Compatible => {
             let mut b = base.seipd_v1(&mut rand::thread_rng(), SymmetricKeyAlgorithm::AES256);
             for recipient in &params.recipients {
-                let sub = pgputil::encryption_component(recipient)
-                    .ok_or_else(|| AppError::policy("recipient lost its encryption subkey mid-flight"))?;
+                let sub = pgputil::encryption_component(recipient).ok_or_else(|| {
+                    AppError::policy("recipient lost its encryption subkey mid-flight")
+                })?;
                 b.encrypt_to_key(&mut rand::thread_rng(), sub)
-                    .map_err(|e| AppError::crypto(format!("encrypting to recipient failed: {e}")))?;
+                    .map_err(|e| {
+                        AppError::crypto(format!("encrypting to recipient failed: {e}"))
+                    })?;
             }
             serialize(b, params.armor)?
         }
@@ -270,10 +288,13 @@ pub fn encrypt(params: &EncryptParams) -> AppResult<(String, bool, Vec<String>)>
                 ChunkSize::C1MiB,
             );
             for recipient in &params.recipients {
-                let sub = pgputil::encryption_component(recipient)
-                    .ok_or_else(|| AppError::policy("recipient lost its encryption subkey mid-flight"))?;
+                let sub = pgputil::encryption_component(recipient).ok_or_else(|| {
+                    AppError::policy("recipient lost its encryption subkey mid-flight")
+                })?;
                 b.encrypt_to_key(&mut rand::thread_rng(), sub)
-                    .map_err(|e| AppError::crypto(format!("encrypting to recipient failed: {e}")))?;
+                    .map_err(|e| {
+                        AppError::crypto(format!("encrypting to recipient failed: {e}"))
+                    })?;
             }
             serialize(b, params.armor)?
         }
@@ -296,7 +317,10 @@ fn serialize<R: std::io::Read, E: pgp::composed::Encryption>(
         let bytes = b
             .to_vec(&mut rand::thread_rng())
             .map_err(|e| AppError::crypto(format!("serializing message failed: {e}")))?;
-        Ok((base64::engine::general_purpose::STANDARD.encode(bytes), true))
+        Ok((
+            base64::engine::general_purpose::STANDARD.encode(bytes),
+            true,
+        ))
     }
 }
 
@@ -314,13 +338,13 @@ pub fn decrypt(
 
     // Parse (armored, or base64-wrapped binary). The Vec must outlive `msg`,
     // since Message borrows the buffer it was parsed from.
-    let binary_bytes: Vec<u8> = if crate::armorfix::sniff(&normalized) == crate::armorfix::SniffedKind::NotArmored
-    {
-        crate::armorfix::maybe_base64_binary(&normalized)
-            .ok_or_else(|| AppError::input("the input is not an OpenPGP message"))?
-    } else {
-        Vec::new()
-    };
+    let binary_bytes: Vec<u8> =
+        if crate::armorfix::sniff(&normalized) == crate::armorfix::SniffedKind::NotArmored {
+            crate::armorfix::maybe_base64_binary(&normalized)
+                .ok_or_else(|| AppError::input("the input is not an OpenPGP message"))?
+        } else {
+            Vec::new()
+        };
 
     let msg: Message = if binary_bytes.is_empty() {
         let (msg, _) = Message::from_string(&normalized)
@@ -350,9 +374,12 @@ pub fn decrypt(
     let key_refs: Vec<&SignedSecretKey> = secret_keys.iter().collect();
     let pw_refs: Vec<&Password> = vec![&pw];
 
-    let decrypted = msg
-        .decrypt_with_keys(pw_refs, key_refs)
-        .map_err(|e| AppError::crypto(format!("decryption failed: {e}")))?;
+    let decrypted = msg.decrypt_with_keys(pw_refs, key_refs).map_err(|e| {
+        AppError::crypto(format!(
+            "could not decrypt this message - it may not be encrypted to any key in your \
+                 keyring, or the passphrase may be wrong (technical detail: {e})"
+        ))
+    })?;
 
     // Flatten compression so the outer structure can be verified afterwards.
     let mut decrypted = decrypted
@@ -427,7 +454,11 @@ fn collect_signatures(msg: &Message) -> Vec<Signature> {
 // Sign (cleartext / detached)
 // ---------------------------------------------------------------------------
 
-pub fn sign_cleartext(key: &SignedSecretKey, passphrase: Option<&str>, text: &str) -> AppResult<String> {
+pub fn sign_cleartext(
+    key: &SignedSecretKey,
+    passphrase: Option<&str>,
+    text: &str,
+) -> AppResult<String> {
     let pw = passphrase
         .map(|p| Password::from(p.to_string()))
         .unwrap_or_else(Password::empty);
@@ -440,14 +471,24 @@ pub fn sign_cleartext(key: &SignedSecretKey, passphrase: Option<&str>, text: &st
         .map_err(|e| AppError::crypto(format!("armoring failed: {e}")))
 }
 
-pub fn sign_detached(key: &SignedSecretKey, passphrase: Option<&str>, text: &str) -> AppResult<String> {
+pub fn sign_detached(
+    key: &SignedSecretKey,
+    passphrase: Option<&str>,
+    text: &str,
+) -> AppResult<String> {
     let pw = passphrase
         .map(|p| Password::from(p.to_string()))
         .unwrap_or_else(Password::empty);
     let hash = pgputil::signing_component(key).hash_alg();
     let boxed: Box<&dyn pgp::types::SigningKey> = Box::new(pgputil::signing_component(key));
-    let sig = DetachedSignature::sign_text_data(&mut rand::thread_rng(), &boxed, &pw, hash, text.as_bytes())
-        .map_err(|e| AppError::crypto(format!("signing failed: {e}")))?;
+    let sig = DetachedSignature::sign_text_data(
+        &mut rand::thread_rng(),
+        &boxed,
+        &pw,
+        hash,
+        text.as_bytes(),
+    )
+    .map_err(|e| AppError::crypto(format!("signing failed: {e}")))?;
     sig.to_armored_string(ArmorOptions::default())
         .map_err(|e| AppError::crypto(format!("armoring failed: {e}")))
 }
@@ -475,7 +516,11 @@ pub fn verify(
         let mut matched = false;
 
         for idx in 0..verifiers.slots.len() {
-            if verifiers.packet_at(idx).verify_detached(&sig, content).is_ok() {
+            if verifiers
+                .packet_at(idx)
+                .verify_detached(&sig, content)
+                .is_ok()
+            {
                 matched = true;
                 infos.push(verifiers.info_at(idx, &sig.signature));
             }

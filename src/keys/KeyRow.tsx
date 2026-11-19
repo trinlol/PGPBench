@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import type { KeySummary } from "../types";
 import { copyKeyToClipboard, copyTextSecret } from "../ipc";
 import { Badge, Fingerprint, Spinner, StatusDot, formatDate } from "../components/ui";
+import { errText } from "../errors";
 import { isExpiringSoon, keyStatus, parseUid } from "./keyUtils";
 
 export function KeyRow({
@@ -43,7 +44,7 @@ export function KeyRow({
       window.clearTimeout(copyTimer.current);
       copyTimer.current = window.setTimeout(() => setCopiedPublic(false), 1500);
     } catch (err) {
-      onError(`Could not copy the public key: ${String(err)}`);
+      onError(`Could not copy the public key: ${errText(err)}`);
     }
   };
 

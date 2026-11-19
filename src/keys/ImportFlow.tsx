@@ -19,6 +19,7 @@ import {
   formatDate,
   inputClass,
 } from "../components/ui";
+import { errText } from "../errors";
 
 export function ImportFlow({
   open,
@@ -62,7 +63,7 @@ export function ImportFlow({
       setAllowLegacy(legacy);
     } catch (err) {
       setPreview(null);
-      setError(String(err));
+      setError(errText(err));
     } finally {
       setBusy(false);
     }
@@ -88,7 +89,7 @@ export function ImportFlow({
       setSaved(true);
       onImported();
     } catch (err) {
-      setError(String(err));
+      setError(errText(err));
     } finally {
       setSaving(false);
     }

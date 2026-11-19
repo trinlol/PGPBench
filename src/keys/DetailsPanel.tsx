@@ -30,6 +30,7 @@ import {
   formatDate,
   inputClass,
 } from "../components/ui";
+import { errText } from "../errors";
 import { PassphraseModal } from "../components/PassphraseModal";
 import { keyStatus, parseUid, todayIso, trimmedOrNull } from "./keyUtils";
 
@@ -74,7 +75,7 @@ export function DetailsPanel({
       .catch((err) => {
         if (!cancelled) {
           setDetails(null);
-          setLoadError(String(err));
+          setLoadError(errText(err));
         }
       })
       .finally(() => {
@@ -130,7 +131,7 @@ export function DetailsPanel({
       setNewPw2("");
       setNotice("Passphrase changed.");
     } catch (err) {
-      setPwError(String(err));
+      setPwError(errText(err));
     } finally {
       setPwBusy(false);
     }
@@ -255,7 +256,7 @@ export function DetailsPanel({
         setNotice("Revocation certificate generated and saved to disk.");
       }
     } catch (err) {
-      setPassError(String(err));
+      setPassError(errText(err));
     } finally {
       setPassBusy(false);
     }

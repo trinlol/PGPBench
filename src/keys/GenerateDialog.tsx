@@ -22,6 +22,7 @@ import {
   formatDate,
   inputClass,
 } from "../components/ui";
+import { errText } from "../errors";
 import { keyLabel, parseUid, passphraseStrength, todayIso, trimmedOrNull } from "./keyUtils";
 
 const ALGOS: { value: Algo; label: string }[] = [
@@ -97,7 +98,7 @@ export function GenerateDialog({
       });
       onGenerated(result);
     } catch (err) {
-      setError(String(err));
+      setError(errText(err));
       setBusy(false);
     }
   };
@@ -356,7 +357,7 @@ export function PostGeneratePanel({
       await copyKeyToClipboard(key.fpr, "public");
       setCopiedPublic(true);
     } catch (err) {
-      setError(String(err));
+      setError(errText(err));
     }
   };
 
@@ -366,7 +367,7 @@ export function PostGeneratePanel({
       await openKeyFolder(key.fpr);
       setOpenedFolder(true);
     } catch (err) {
-      setError(String(err));
+      setError(errText(err));
     }
   };
 
@@ -378,7 +379,7 @@ export function PostGeneratePanel({
       await copyKeyToClipboard(key.fpr, "private");
       setCopiedPrivate(true);
     } catch (err) {
-      setError(String(err));
+      setError(errText(err));
     } finally {
       setBusy(false);
     }

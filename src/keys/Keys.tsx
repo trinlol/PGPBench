@@ -15,6 +15,7 @@ import {
   chunkFingerprint,
   inputClass,
 } from "../components/ui";
+import { errText } from "../errors";
 import { KeyRow } from "./KeyRow";
 import { DetailsPanel } from "./DetailsPanel";
 import { GenerateDialog, PostGeneratePanel } from "./GenerateDialog";
@@ -64,7 +65,7 @@ export function Keys({ defaultProfile }: { defaultProfile: Profile }) {
       setKeys(list);
       setError(null);
     } catch (err) {
-      setError(`Could not load the keyring: ${String(err)}`);
+      setError(`Could not load the keyring: ${errText(err)}`);
     } finally {
       setLoading(false);
     }
@@ -128,7 +129,7 @@ export function Keys({ defaultProfile }: { defaultProfile: Profile }) {
       const result = await copyKeyToClipboard(key.fpr, "private");
       setNotice(copyNotice(result, `Private key for ${keyLabel(key)}`));
     } catch (err) {
-      setError(`Could not copy the private key: ${String(err)}`);
+      setError(`Could not copy the private key: ${errText(err)}`);
     } finally {
       setBusyFpr(null);
     }
@@ -146,7 +147,7 @@ export function Keys({ defaultProfile }: { defaultProfile: Profile }) {
       setNotice(`${keyLabel(key)} was removed from your keyring.`);
       await load({ quiet: true });
     } catch (err) {
-      setError(`Could not delete the key: ${String(err)}`);
+      setError(`Could not delete the key: ${errText(err)}`);
     } finally {
       setBusyFpr(null);
     }

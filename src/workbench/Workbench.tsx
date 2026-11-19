@@ -19,6 +19,7 @@ import {
   sign,
   verify,
 } from "../ipc";
+import { errText as errorText } from "../errors";
 import { Badge, Banner, Button, Spinner } from "../components/ui";
 import { PassphraseModal } from "../components/PassphraseModal";
 import { detect, normalizeKeyBlocks } from "./detect";
@@ -65,11 +66,6 @@ interface PassphraseRequest {
   explain: string;
   confirmLabel: string;
   resolve: (passphrase: string | undefined) => void;
-}
-
-function errorText(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  return String(err);
 }
 
 /** Copy produced ciphertext with the Rust-side secret hint; never throws. */
