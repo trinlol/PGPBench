@@ -352,13 +352,14 @@ pub fn open_key_folder(state: State<AppState>, fpr: Option<String>) -> AppResult
             return Err(AppError::io("the key store folder does not exist yet"));
         }
 
-        let result = if selecting {
-            Command::new("explorer")
-                .arg(format!("/select,{}", path.to_string_lossy()))
-                .spawn()
+        let mut cmd = Command::new("explorer");
+        if selecting {
+            cmd.arg(format!("/select,{}", path.to_string_lossy()));
         } else {
-            Command::new("explorer").arg(&path).spawn()
-        };
+            cmd.arg(&path);
+        }
+        crate::store::hide_console(&mut cmd);
+        let result = cmd.spawn();
         result
             .map(|_| true)
             .map_err(|e| AppError::io(format!("could not open the key folder: {e}")))

@@ -1,6 +1,6 @@
 [package]
 name = "pocketpgp"
-version = "0.1.1"
+version = "0.1.2"
 description = "A minimal, modern, fully-offline OpenPGP app for Windows"
 authors = ["PocketPGP contributors"]
 edition = "2021"

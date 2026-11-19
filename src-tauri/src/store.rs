@@ -253,6 +253,20 @@ impl Store {
     }
 }
 
+/// Keep GUI-spawned console programs from flashing a console window on
+/// Windows (icacls etc. are console apps; a GUI process spawning them without
+/// CREATE_NO_WINDOW makes Windows briefly show a command prompt).
+pub(crate) fn hide_console(cmd: &mut std::process::Command) {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    #[cfg(not(windows))]
+    let _ = cmd;
+}
+
 fn load_settings(root: &Path) -> AppResult<Settings> {
     let path = root.join("settings.json");
     if !path.exists() {
@@ -268,8 +282,10 @@ fn load_settings(root: &Path) -> AppResult<Settings> {
 /// if something has opened the directory up we report it as a persistent
 /// warning instead of hiding it.
 fn check_acl(dir: &Path) -> AppResult<Option<String>> {
-    let output = Command::new("icacls")
-        .arg(dir)
+    let mut cmd = Command::new("icacls");
+    cmd.arg(dir);
+    hide_console(&mut cmd);
+    let output = cmd
         .output()
         .map_err(|e| AppError::io(format!("ACL verification failed to run: {e}")))?;
 
