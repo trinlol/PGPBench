@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/trinlol/PGPBench/actions/workflows/ci.yml/badge.svg)](https://github.com/trinlol/PGPBench/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/trinlol/PGPBench)](https://github.com/trinlol/PGPBench/releases)
+[![Downloads](https://img.shields.io/github/downloads/trinlol/PGPBench/total)](https://github.com/trinlol/PGPBench/releases)
 
 A minimal, modern OpenPGP app for Windows, clipboard-first, with no UI
 bloat: paste to decrypt or encrypt, and everything stays on your device.
