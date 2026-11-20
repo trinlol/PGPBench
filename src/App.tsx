@@ -144,9 +144,9 @@ export default function App() {
       <header className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 text-white shadow-sm">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-              <circle cx="8" cy="8" r="4.2" />
-              <path d="M11.5 11.5L20 20M17 17v3M20.5 17v2.2" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="8.3" cy="8.3" r="4.3" />
+              <path d="M11.4 11.4 L19.4 19.4 L17.2 21.6 M15.8 15.8 L13.4 18.2" />
             </svg>
           </div>
           <div>
