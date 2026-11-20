@@ -16,3 +16,7 @@ Thumbs.db
 
 # Update signing key (back this up yourself - losing it breaks future updates)
 update-key/
+
+# Python / papertrade simulator (source is committed; scratch output is not)
+__pycache__/
+sandbox/

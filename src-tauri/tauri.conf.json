@@ -40,7 +40,7 @@
     "createUpdaterArtifacts": true,
     "publisher": "PocketPGP contributors",
     "shortDescription": "Offline OpenPGP for Windows",
-    "longDescription": "A minimal, modern, fully-offline OpenPGP app for Windows - a clipboard-first alternative to Kleopatra. Generate keys, encrypt, decrypt, sign and verify by paste. Keys never leave your device.",
+    "longDescription": "A minimal, modern OpenPGP app for Windows - clipboard-first, with no UI bloat. Generate keys, encrypt, decrypt, sign and verify by paste. Keys never leave your device.",
     "windows": {
       "nsis": {
         "installMode": "currentUser",

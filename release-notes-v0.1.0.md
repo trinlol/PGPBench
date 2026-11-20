@@ -1,6 +1,6 @@
 # PocketPGP 0.1.0
 
-First public release. A minimal, modern, **fully-offline** OpenPGP app for Windows — a clipboard-first alternative to Kleopatra, without the UI bloat.
+First public release. A minimal, modern, **fully-offline** OpenPGP app for Windows — clipboard-first, with no UI bloat.
 
 ![no network](https://img.shields.io/badge/network-calls-0%20ever-success)
 
@@ -13,7 +13,7 @@ First public release. A minimal, modern, **fully-offline** OpenPGP app for Windo
   - plain text → compose: pick recipients (encrypt-to-self on by default), *Encrypt & copy*
   - whitespace-mangled armor from chat apps still parses — even a CRC24 checksum fused into the base64 is recovered
 - **Keys** — flat searchable keyring with filter chips; generate keys with an always-asked expiry (ECC Curve25519 default, RSA-3072/4096 under Advanced); copy public/private in one click; change passphrase, extend expiry, generate revocation certificates; every generated key is offered its revocation certificate immediately
-- **Interoperability profiles** — Compatible (v4) by default so your keys work everywhere (GnuPG, Kleopatra, Thunderbird, Mailvelope); RFC 9580 (v6) as an experimental opt-in
+- **Interoperability profiles** — Compatible (v4) by default so your keys work everywhere (GnuPG, Thunderbird, Mailvelope); RFC 9580 (v6) as an experimental opt-in
 - **Theme follows Windows** out of the box; pin light/dark with one click
 - **Open key folder** buttons — keys auto-save to `%LOCALAPPDATA%\PocketPGP\keys\` as human-readable armored files, and you can jump straight there from the UI
 

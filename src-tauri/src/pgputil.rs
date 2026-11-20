@@ -87,7 +87,8 @@ pub fn primary_expiry(pub_key: &SignedPublicKey) -> Option<u64> {
 
 /// Subkey expiry in unix seconds, from its binding signature.
 pub fn subkey_expiry(sig: &Signature, subkey_created: u64) -> Option<u64> {
-    sig.key_expiration_time().map(|d| subkey_created + d.as_secs() as u64)
+    sig.key_expiration_time()
+        .map(|d| subkey_created + d.as_secs() as u64)
 }
 
 /// True when the key carries a primary key revocation signature.
@@ -110,11 +111,19 @@ pub fn index_entry(store: &Store, key: &SignedPublicKey) -> IndexEntry {
         created: key.primary_key.created_at().as_secs() as u64,
         expires: primary_expiry(key),
         has_secret: store.has_secret(&fpr),
-        profile: if key.primary_key.version() == KeyVersion::V6 { "rfc9580".into() } else { "compatible".into() },
+        profile: if key.primary_key.version() == KeyVersion::V6 {
+            "rfc9580".into()
+        } else {
+            "compatible".into()
+        },
         // Derivable from the files themselves, so index.json stays a pure
         // cache: a key whose secret half is present is "own", otherwise it
         // entered the keyring as a pasted public key ("imported").
-        source: if store.has_secret(&fpr) { "own".into() } else { "imported".into() },
+        source: if store.has_secret(&fpr) {
+            "own".into()
+        } else {
+            "imported".into()
+        },
         revoked: is_revoked(key),
         fpr,
     }
@@ -130,20 +139,28 @@ pub fn policy_check(pub_key: &SignedPublicKey, allow_legacy: bool) -> Result<Vec
     // --- Hard rejects -------------------------------------------------------
     let check_pkt = |params: &PublicParams, what: &str| -> Result<(), String> {
         match params {
-            PublicParams::DSA(_) => {
-                Err(format!("{what} uses DSA, which is deprecated and rejected by this app"))
-            }
-            PublicParams::Elgamal(_) => {
-                Err(format!("{what} uses Elgamal, which is deprecated and rejected by this app"))
-            }
+            PublicParams::DSA(_) => Err(format!(
+                "{what} uses DSA, which is deprecated and rejected by this app"
+            )),
+            PublicParams::Elgamal(_) => Err(format!(
+                "{what} uses Elgamal, which is deprecated and rejected by this app"
+            )),
             PublicParams::ECDH(p) if p.curve() == pgp::crypto::ecc_curve::ECCCurve::Secp256k1 => {
-                Err(format!("{what} uses secp256k1, which is rejected by this app"))
+                Err(format!(
+                    "{what} uses secp256k1, which is rejected by this app"
+                ))
             }
             PublicParams::ECDSA(p) if p.curve() == pgp::crypto::ecc_curve::ECCCurve::Secp256k1 => {
-                Err(format!("{what} uses secp256k1, which is rejected by this app"))
+                Err(format!(
+                    "{what} uses secp256k1, which is rejected by this app"
+                ))
             }
-            PublicParams::EdDSALegacy(p) if p.curve() == pgp::crypto::ecc_curve::ECCCurve::Secp256k1 => {
-                Err(format!("{what} uses secp256k1, which is rejected by this app"))
+            PublicParams::EdDSALegacy(p)
+                if p.curve() == pgp::crypto::ecc_curve::ECCCurve::Secp256k1 =>
+            {
+                Err(format!(
+                    "{what} uses secp256k1, which is rejected by this app"
+                ))
             }
             _ => Ok(()),
         }
@@ -187,12 +204,14 @@ pub fn policy_check(pub_key: &SignedPublicKey, allow_legacy: bool) -> Result<Vec
     // --- Warnings -----------------------------------------------------------
     if pub_key.primary_key.version() == KeyVersion::V6 {
         warnings.push(
-            "This is a v6 (RFC 9580) key. Stock GnuPG/Kleopatra/Thunderbird cannot \
+            "This is a v6 (RFC 9580) key. Stock GnuPG/Thunderbird cannot \
              read it (GnuPG needs >= 2.5.23 plus the --allow-9980 option)."
                 .into(),
         );
     }
-    if pub_key.primary_key.version() == KeyVersion::V2 || pub_key.primary_key.version() == KeyVersion::V3 {
+    if pub_key.primary_key.version() == KeyVersion::V2
+        || pub_key.primary_key.version() == KeyVersion::V3
+    {
         return Err("v2/v3 keys are ancient and unsafe to use; import rejected".into());
     }
 
@@ -201,11 +220,17 @@ pub fn policy_check(pub_key: &SignedPublicKey, allow_legacy: bool) -> Result<Vec
 
 /// The best encryption component of a key: newest valid encryption subkey,
 /// or (rare) the primary itself when it carries encryption flags.
-pub fn encryption_component<'a>(key: &'a SignedPublicKey) -> Option<&'a pgp::composed::SignedPublicSubKey> {
+pub fn encryption_component<'a>(
+    key: &'a SignedPublicKey,
+) -> Option<&'a pgp::composed::SignedPublicSubKey> {
     let mut best: Option<(&pgp::composed::SignedPublicSubKey, u32)> = None;
     for sub in &key.public_subkeys {
-        let Some(binding) = sub.signatures.first() else { continue };
-        let Some(flags) = key_flags_of_sig(binding) else { continue };
+        let Some(binding) = sub.signatures.first() else {
+            continue;
+        };
+        let Some(flags) = key_flags_of_sig(binding) else {
+            continue;
+        };
         if !(flags.encrypt_comms() || flags.encrypt_storage()) {
             continue;
         }
@@ -228,8 +253,12 @@ pub fn encryption_component<'a>(key: &'a SignedPublicKey) -> Option<&'a pgp::com
 pub fn signing_component<'a>(key: &'a SignedSecretKey) -> &'a dyn pgp::types::SigningKey {
     let mut best: Option<(&pgp::packet::SecretSubkey, u32)> = None;
     for sub in &key.secret_subkeys {
-        let Some(binding) = sub.signatures.first() else { continue };
-        let Some(flags) = key_flags_of_sig(binding) else { continue };
+        let Some(binding) = sub.signatures.first() else {
+            continue;
+        };
+        let Some(flags) = key_flags_of_sig(binding) else {
+            continue;
+        };
         if !flags.sign() {
             continue;
         }

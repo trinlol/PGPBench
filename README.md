@@ -3,8 +3,10 @@
 [![CI](https://github.com/trinlol/PocketPGP/actions/workflows/ci.yml/badge.svg)](https://github.com/trinlol/PocketPGP/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/trinlol/PocketPGP)](https://github.com/trinlol/PocketPGP/releases)
 
-A minimal, modern, fully-offline OpenPGP app for Windows — a clipboard-first
-alternative to Kleopatra, without the UI bloat.
+A minimal, modern OpenPGP app for Windows — clipboard-first, with no UI
+bloat: paste to decrypt or encrypt, and everything stays on your device.
+
+![PocketPGP in action: paste an encrypted message, unlock with your passphrase, read the verified plaintext - then type a reply and encrypt it for your recipients](docs/demo.gif)
 
 | Workbench — one paste surface, auto-detects | Keys — your keyring at a glance |
 |---|---|
@@ -82,14 +84,14 @@ users can read it.
 
 ## Interoperability profiles
 
-2026 reality: stock Kleopatra/GnuPG/Thunderbird speak LibrePGP (v4) and
+2026 reality: stock GnuPG/Thunderbird implementations speak LibrePGP (v4) and
 cannot read RFC 9580 v6 keys (GnuPG needs ≥ 2.5.23 **plus** the
 `--allow-9980` option). PocketPGP therefore defaults to the profile that
 works everywhere:
 
 | Profile | Default? | Key format | Protection | Interoperates with |
 |---|---|---|---|---|
-| **Compatible** | ✔ | v4 — Ed25519/X25519 (legacy IDs) or RSA-3072/4096 | iterated+salted S2K (SHA-256, AES-256), no AEAD, no compression | Kleopatra/GnuPG 2.4+, Thunderbird, Mailvelope, mobile clients |
+| **Compatible** | ✔ | v4 — Ed25519/X25519 (legacy IDs) or RSA-3072/4096 | iterated+salted S2K (SHA-256, AES-256), no AEAD, no compression | GnuPG 2.4+, Thunderbird, Mailvelope, mobile clients |
 | **RFC 9580** | opt-in, marked experimental | v6 keys | AEAD (OCB), Argon2 S2K | modern libs only |
 
 The profile is chosen per operation (Advanced panel) and derived per key;

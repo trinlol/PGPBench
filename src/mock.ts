@@ -242,38 +242,47 @@ export async function delete_key(a: { args: { fpr: string; confirm: boolean } })
 }
 
 export async function encrypt(a: { args: EncryptRequest }): Promise<EncryptResult> {
-  await sleep(300);
-  const msg = a.args.message.replace(/\n/g, "\\n");
+  await sleep(400);
+  // Plausible-looking armor for dev previews (deterministic per message).
+  const seed = a.args.message.length + a.args.recipient_fprs.length;
+  const b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  const line = (offset: number) =>
+    Array.from({ length: 64 }, (_, i) => b64[(i * 7 + offset * 13 + seed) % 64]).join("");
   return {
-    output: `-----BEGIN PGP MESSAGE-----\n\nmockCiphertext(${a.args.profile})\nrecipients=[${a.args.recipient_fprs.join(", ")}]\n\n${msg}\n=CAF3\n-----END PGP MESSAGE-----\n`,
+    output: [
+      "-----BEGIN PGP MESSAGE-----",
+      "",
+      line(1),
+      line(2),
+      line(3),
+      "=Q2vN",
+      "-----END PGP MESSAGE-----",
+      "",
+    ].join("\n"),
     binary: false,
     warnings: [],
   };
 }
 
 export async function decrypt(a: { args: DecryptRequest }): Promise<DecryptResult> {
-  await sleep(300);
+  await sleep(400);
   if (!a.args.input.includes("BEGIN PGP MESSAGE")) {
     throw new Error("the input is not an OpenPGP message");
   }
-  const inner = a.args.input.split("\n").find((l) => l.startsWith("mockCiphertext"));
-  const warnings: string[] = [];
-  const signatures = inner
-    ? []
-    : [
-        {
-          fpr: FPR_A,
-          key_uid: "Alice Mock <alice@example.com>",
-          key_source: "own" as const,
-          signed_at: Math.floor(Date.now() / 1000),
-          valid: true,
-          revoked: false,
-        },
-      ];
   return {
-    plaintext: `mock-plaintext of your paste\n(${inner ?? "unknown container"})\npassphrase=${a.args.passphrase ? "provided" : "none"}`,
-    signatures,
-    warnings,
+    plaintext:
+      "Hey! The signed build is ready and the release checklist passed.\n\nShipping Friday morning - shout if anything else needs a look.\n\n- Alex",
+    signatures: [
+      {
+        fpr: FPR_A,
+        key_uid: "Alice Mock <alice@example.com>",
+        key_source: "own" as const,
+        signed_at: Math.floor(Date.now() / 1000),
+        valid: true,
+        revoked: false,
+      },
+    ],
+    warnings: [],
   };
 }
 
