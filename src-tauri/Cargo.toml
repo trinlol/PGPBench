@@ -1,6 +1,6 @@
 [package]
 name = "pgpbench"
-version = "0.2.0"
+version = "0.2.1"
 description = "A minimal, modern, fully-offline OpenPGP app for Windows"
 authors = ["PGPBench contributors"]
 edition = "2021"
