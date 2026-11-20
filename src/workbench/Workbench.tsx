@@ -504,7 +504,7 @@ export function Workbench({
               className="px-2 py-1 text-xs"
               onClick={handlePasteFromClipboard}
               disabled={busy !== null}
-              title="Reads the clipboard once — the clipboard is never watched or polled"
+              title="Reads the clipboard once, the clipboard is never watched or polled"
             >
               {busy === "paste" ? (
                 <>
@@ -637,8 +637,8 @@ export function Workbench({
             </Button>
             <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
               {detection.kind === "detached_signature"
-                ? "signature block found — the surrounding text is verified"
-                : "signed text found — signer must be in the keyring"}
+                ? "signature block found, the surrounding text is verified"
+                : "signed text found, signer must be in the keyring"}
             </span>
           </div>
         </section>
@@ -737,7 +737,7 @@ export function Workbench({
                   disabled={busy !== null || ownKeys.length === 0}
                   title={
                     ownKeys.length === 0
-                      ? "Signing needs a private key — add one in the Keys tab"
+                      ? "Signing needs a private key, add one in the Keys tab"
                       : undefined
                   }
                 >
@@ -789,7 +789,7 @@ export function Workbench({
           <SignatureList signatures={outcome.signatures} />
           {outcome.signatures.length === 0 ? (
             <Banner tone="info">
-              Decrypted, but the message is unsigned — authenticity was not verified.
+              Decrypted, but the message is unsigned, authenticity was not verified.
             </Banner>
           ) : null}
           <Warnings items={outcome.warnings} />
@@ -833,7 +833,7 @@ export function Workbench({
             note={
               outcome.binary ? (
                 <p className="mt-1.5 text-[11px] text-neutral-500 dark:text-neutral-400">
-                  Base64 of binary output — armor is off, so paste at your own risk.
+                  Base64 of binary output, armor is off, so paste at your own risk.
                 </p>
               ) : undefined
             }

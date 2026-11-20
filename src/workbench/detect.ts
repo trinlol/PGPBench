@@ -219,7 +219,7 @@ export function detect(input: string): Detection {
 
   return {
     kind: "text",
-    label: "Plain text — compose a message",
+    label: "Plain text, compose a message",
     payload: text,
     signedContent: null,
     signatureBlock: null,

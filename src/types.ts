@@ -1,5 +1,5 @@
 /**
- * PocketPGP IPC contract — shared between the Rust command layer (serde) and
+ * PocketPGP IPC contract, shared between the Rust command layer (serde) and
  * the webview UI. Rust structs MUST serialize exactly as defined here.
  *
  * Security rule (plan §3): only public material, metadata, results and
@@ -88,9 +88,9 @@ export interface GenerateRequest {
 
 export interface GenerateResult {
   key: KeySummary;
-  /** Armored public key — safe to display. */
+  /** Armored public key, safe to display. */
   public_key: string;
-  /** Armored revocation certificate — public material by design. */
+  /** Armored revocation certificate, public material by design. */
   revocation_cert: string;
 }
 
@@ -103,7 +103,7 @@ export interface SignatureInfo {
   /** Unix seconds of signature creation, if present. */
   signed_at: number | null;
   valid: boolean;
-  /** The signing key is revoked — shown as a red flag even if the signature itself checks out. */
+  /** The signing key is revoked, shown as a red flag even if the signature itself checks out. */
   revoked: boolean;
 }
 

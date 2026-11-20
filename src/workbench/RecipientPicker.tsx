@@ -114,7 +114,7 @@ export function RecipientPicker({
             onChange={(e) => onOneOff(e.target.value)}
           />
           <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
-            Used for this message only — never saved to the keyring.
+            Used for this message only, never saved to the keyring.
           </p>
         </Disclosure>
       </div>

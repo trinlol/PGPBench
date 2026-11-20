@@ -3,28 +3,28 @@
 [![CI](https://github.com/trinlol/PocketPGP/actions/workflows/ci.yml/badge.svg)](https://github.com/trinlol/PocketPGP/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/trinlol/PocketPGP)](https://github.com/trinlol/PocketPGP/releases)
 
-A minimal, modern OpenPGP app for Windows — clipboard-first, with no UI
+A minimal, modern OpenPGP app for Windows, clipboard-first, with no UI
 bloat: paste to decrypt or encrypt, and everything stays on your device.
 
 ![PocketPGP in action: paste an encrypted message, unlock with your passphrase, read the verified plaintext - then type a reply and encrypt it for your recipients](docs/demo.gif)
 
-| Workbench — one paste surface, auto-detects | Keys — your keyring at a glance |
+| Workbench, one paste surface, auto-detects | Keys, your keyring at a glance |
 |---|---|
 | ![Workbench](docs/shot-workbench.png) | ![Keys](docs/shot-keys.png) |
 
 Everything you need for personal daily OpenPGP use, nothing else:
 
-- **Workbench** — one paste surface that auto-detects what you pasted:
+- **Workbench**, one paste surface that auto-detects what you pasted:
   an OpenPGP message (→ decrypt & verify), a signed message (→ verify),
   a public/private key block (→ import), or plain text (→ compose, pick
   recipients, encrypt & copy). Whitespace-mangled armor from chat apps still
   parses.
-- **Keys** — a flat, searchable list of your keyring. Generate keys
+- **Keys**, a flat, searchable list of your keyring. Generate keys
   (Ed25519/X25519 by default, RSA-3072/4096 under Advanced), always with a
   chosen expiry; copy public/private to the clipboard in one click; rename
   keys, change passphrases, extend expiry, and generate revocation
   certificates.
-- **Cryptography never touches the network.** No keyserver, no WKD — keys
+- **Cryptography never touches the network.** No keyserver, no WKD, keys
   enter your keyring only by paste/import. The app's single possible network
   call is an optional, signature-verified update check against the project's
   GitHub releases (on by default; disable it in Settings).
@@ -37,12 +37,12 @@ Everything you need for personal daily OpenPGP use, nothing else:
 
 ## Install
 
-**Windows 10/11** — grab the latest release from the
+**Windows 10/11**, grab the latest release from the
 [releases page](https://github.com/trinlol/PocketPGP/releases):
 
-- **`PocketPGP_0.1.0_x64-setup.exe`** — the installer (per-user, no admin
+- **`PocketPGP_0.1.0_x64-setup.exe`**, the installer (per-user, no admin
   prompt). Adds Start-menu entries and an uninstaller.
-- **`pocketpgp.exe`** — the portable build. One file, no install; put it
+- **`pocketpgp.exe`**, the portable build. One file, no install; put it
   anywhere and run it. Requires the WebView2 Runtime (preinstalled on
   current Windows 10/11).
 
@@ -91,7 +91,7 @@ works everywhere:
 
 | Profile | Default? | Key format | Protection | Interoperates with |
 |---|---|---|---|---|
-| **Compatible** | ✔ | v4 — Ed25519/X25519 (legacy IDs) or RSA-3072/4096 | iterated+salted S2K (SHA-256, AES-256), no AEAD, no compression | GnuPG 2.4+, Thunderbird, Mailvelope, mobile clients |
+| **Compatible** | ✔ | v4, Ed25519/X25519 (legacy IDs) or RSA-3072/4096 | iterated+salted S2K (SHA-256, AES-256), no AEAD, no compression | GnuPG 2.4+, Thunderbird, Mailvelope, mobile clients |
 | **RFC 9580** | opt-in, marked experimental | v6 keys | AEAD (OCB), Argon2 S2K | modern libs only |
 
 The profile is chosen per operation (Advanced panel) and derived per key;
@@ -102,7 +102,7 @@ why, and warns when v6 recipients appear in a Compatible context.
 
 `tests/interop.ps1` drives the app's real Rust core (via the
 `interop-cli` harness binary) against stock GnuPG. All 14 cases pass
-against GnuPG 2.5.24 — key imports in both directions (ECC, RSA-4096,
+against GnuPG 2.5.24, key imports in both directions (ECC, RSA-4096,
 passphrase-protected secret files, `gpg --export-secret-keys`), sign+encrypt
 round-trips, clearsign, detached signatures, old RSA keys, bumped subkey
 expiry, revoked-key encrypt blocking, oversized/garbled paste rejection,
@@ -125,7 +125,7 @@ powershell -File tests\interop.ps1
   (making the app fully air-gapped again). Everything cryptographic -
   keys, encryption, verification - never touches the network.
 - **Decrypt-then-verify, always.** Verification outcomes show the signer's
-  fingerprint and key source (*own key / imported / unknown*) — no invented
+  fingerprint and key source (*own key / imported / unknown*), no invented
   trust model, no bare green checkmarks. A `write_secret` hint keeps
   ciphertext, keys and decrypted text out of the Windows clipboard history
   (Win+V) and cloud sync; the clipboard auto-clears (default 60 s,
@@ -145,10 +145,10 @@ powershell -File tests\interop.ps1
 
 - No symmetric/password-only encryption, no smartcards/YubiKey, no
   X.509/S-MIME, no web-of-trust UI, no file/archive encryption.
-- No keyserver or WKD lookups — keys arrive by paste or import.
+- No keyserver or WKD lookups, keys arrive by paste or import.
 - "Binary" output is presented base64-wrapped for clipboard transport;
   clipboard-first means armor is the native format.
-- No "remember passphrase" — every passphrase-using operation prompts
+- No "remember passphrase", every passphrase-using operation prompts
   (in-app modal, never an external pinentry window).
 - v6/RFC 9580 is behind a clearly labeled experimental opt-in; the wider
   ecosystem is still catching up.

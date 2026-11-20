@@ -161,7 +161,7 @@ export default function App() {
           {init ? (
             <button
               className="hidden max-w-[260px] items-center gap-1 truncate rounded px-1.5 py-1 text-[11px] text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-300 sm:flex"
-              title={`${init.data_dir} — click to open`}
+              title={`${init.data_dir}, click to open`}
               onClick={() => void openKeyFolder(null)}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">

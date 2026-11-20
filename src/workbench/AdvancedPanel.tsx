@@ -150,7 +150,7 @@ export function AdvancedPanel({
             checked={value.compress}
             onChange={(next) => set("compress", next)}
             label="Compress before encrypting"
-            hint="Off by default — short messages gain nothing."
+            hint="Off by default, short messages gain nothing."
           />
           <ToggleRow
             checked={value.detachedSignature}
