@@ -20,3 +20,6 @@ update-key/
 # Python / papertrade simulator (source is committed; scratch output is not)
 __pycache__/
 sandbox/
+
+# Unrelated local project, kept out of the repo
+papertrade/
