@@ -555,7 +555,7 @@ export function DetailsPanel({
                     <Banner tone="warning">
                       A copy has been saved to{" "}
                       <code className="font-mono text-[11px]">
-                        %LOCALAPPDATA%\PocketPGP\keys\{fpr}.rev.asc
+                        %LOCALAPPDATA%\PGPBench\keys\{fpr}.rev.asc
                       </code>
                       . Store a second copy somewhere safe. Anyone holding this certificate can revoke
                       your key.

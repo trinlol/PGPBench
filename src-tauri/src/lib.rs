@@ -1,4 +1,4 @@
-//! PocketPGP - a minimal, modern, fully-offline OpenPGP app for Windows.
+//! PGPBench - a minimal, modern, fully-offline OpenPGP app for Windows.
 //!
 //! Architecture (plan §3):
 //!   webview (Workbench / Keys) -> Tauri command layer -> rPGP Rust core
@@ -22,7 +22,7 @@ pub fn run() {
     let store = match store::Store::init() {
         Ok(s) => s,
         Err(e) => {
-            eprintln!("PocketPGP: refusing to start: {e}");
+            eprintln!("PGPBench: refusing to start: {e}");
             std::process::exit(1);
         }
     };
@@ -54,5 +54,5 @@ pub fn run() {
             commands::copy_text_secret,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running PocketPGP");
+        .expect("error while running PGPBench");
 }

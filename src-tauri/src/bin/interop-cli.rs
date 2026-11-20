@@ -1,15 +1,15 @@
-//! interop-cli - a thin command-line harness into PocketPGP's Rust core.
+//! interop-cli - a thin command-line harness into PGPBench's Rust core.
 //!
 //! Used ONLY by the interop test matrix (tests/interop.ps1) to exercise the
 //! exact same keygen / encrypt / decrypt / sign / verify / import code the
 //! app uses, against real GnuPG. Keyring state is isolated via the
-//! POCKETPGP_DATA_DIR environment variable.
+//! PGPBENCH_DATA_DIR environment variable.
 
 use std::io::Read;
 
 use pgp::composed::{ArmorOptions, Deserializable, SignedPublicKey, SignedSecretKey};
 use pgp::types::KeyDetails as _;
-use pocketpgp_lib::{armorfix, keygen, msgops, pgputil, store};
+use pgpbench_lib::{armorfix, keygen, msgops, pgputil, store};
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -48,7 +48,7 @@ fn input_text(args: &[String]) -> String {
                 .map_err(|e| format!("cannot read {path}: {e}"))
                 .unwrap_or_default();
             if s.len() > store::MAX_PASTE_BYTES {
-                eprintln!("ERROR: the input is larger than the 1 MB limit PocketPGP accepts");
+                eprintln!("ERROR: the input is larger than the 1 MB limit PGPBench accepts");
                 std::process::exit(1);
             }
             return s;
@@ -57,15 +57,15 @@ fn input_text(args: &[String]) -> String {
     let mut s = String::new();
     let _ = std::io::stdin().read_to_string(&mut s);
     if s.len() > store::MAX_PASTE_BYTES {
-        eprintln!("ERROR: the input is larger than the 1 MB limit PocketPGP accepts");
+        eprintln!("ERROR: the input is larger than the 1 MB limit PGPBench accepts");
         std::process::exit(1);
     }
     s
 }
 
 fn run(args: &[String]) -> Result<String, String> {
-    let data_dir = std::env::var("POCKETPGP_DATA_DIR")
-        .expect("POCKETPGP_DATA_DIR must be set for interop-cli");
+    let data_dir = std::env::var("PGPBENCH_DATA_DIR")
+        .expect("PGPBENCH_DATA_DIR must be set for interop-cli");
 
     let st = store::Store::init().map_err(|e| e.to_string())?;
     let _ = data_dir;

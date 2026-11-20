@@ -348,7 +348,7 @@ export function PostGeneratePanel({
   const key = result.key;
   const label = keyLabel(key);
   const { email } = parseUid(key.uids[0] ?? "");
-  const keysPath = `%LOCALAPPDATA%\\PocketPGP\\keys\\`;
+  const keysPath = `%LOCALAPPDATA%\\PGPBench\\keys\\`;
   const revPath = `${keysPath}${key.fpr}.rev.asc`;
 
   const copyPublic = async () => {

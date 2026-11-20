@@ -194,7 +194,7 @@ pub fn policy_check(pub_key: &SignedPublicKey, allow_legacy: bool) -> Result<Vec
         } else {
             return Err(
                 "The key's self-signature is missing key-flag subpackets (a pre-RFC-4880 \
-                 legacy key). PocketPGP rejects it by default - enable the legacy \
+                 legacy key). PGPBench rejects it by default - enable the legacy \
                  override under Advanced to import anyway."
                     .into(),
             );

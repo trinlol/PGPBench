@@ -613,7 +613,7 @@ fn create_revocation_inner(
     let mut headers = pgp::armor::Headers::new();
     headers.insert(
         "Comment".into(),
-        vec!["PocketPGP revocation certificate".into()],
+        vec!["PGPBench revocation certificate".into()],
     );
 
     // Serialize through DetachedSignature: its Serialize impl writes the
@@ -701,8 +701,8 @@ mod tests {
         passphrase: Option<&'a str>,
     ) -> GenerateOptions<'a> {
         GenerateOptions {
-            name: "Pocket Tester".into(),
-            email: "pocket@example.com".into(),
+            name: "Bench Tester".into(),
+            email: "bench@example.com".into(),
             comment: Some("test key".into()),
             passphrase,
             expires_at,
@@ -849,7 +849,7 @@ mod tests {
         );
         assert_eq!(
             re.details.users[1].id.as_str().unwrap(),
-            "Pocket Tester (test key) <pocket@example.com>"
+            "Bench Tester (test key) <bench@example.com>"
         );
 
         // Exactly one UID carries the primary flag: the new one.
@@ -909,10 +909,10 @@ mod tests {
         assert!(armored.starts_with("-----BEGIN PGP MESSAGE-----"));
 
         // Round-trip through a scratch store so decrypt can find the keys.
-        let dir = std::env::temp_dir().join(format!("pocketpgp-test-ses-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("pgpbench-test-ses-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let fpr = crate::pgputil::fpr_hex(&sec.primary_key.fingerprint());
-        std::env::set_var("POCKETPGP_DATA_DIR", &dir);
+        std::env::set_var("PGPBENCH_DATA_DIR", &dir);
         let st = crate::store::Store::init().unwrap();
         {
             use pgp::composed::ArmorOptions;

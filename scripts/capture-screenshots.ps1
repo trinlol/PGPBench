@@ -1,4 +1,4 @@
-# Capture PocketPGP screenshots WITHOUT depending on what's on top:
+# Capture PGPBench screenshots WITHOUT depending on what's on top:
 #   PrintWindow  - reads the window's own pixels (works while occluded)
 #   PostMessage  - clicks the tab inside the app (never touches the real cursor)
 # Then verifies the result with pixel checks, since the operator can't view images.

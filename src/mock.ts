@@ -76,7 +76,7 @@ export async function app_init(): Promise<InitInfo> {
     settings: { ...settings },
     acl_ok: true,
     acl_note: null,
-    data_dir: "C:\\Users\\dev\\AppData\\Local\\PocketPGP (mock)",
+    data_dir: "C:\\Users\\dev\\AppData\\Local\\PGPBench (mock)",
   };
 }
 
@@ -229,8 +229,8 @@ export async function open_key_folder(a: { fpr: string | null }): Promise<boolea
   // Browser dev mode: point the user at the folder in the console instead.
   console.info(
     a.fpr
-      ? `PocketPGP (mock): would open the key folder and select ${a.fpr}`
-      : "PocketPGP (mock): would open the key folder",
+      ? `PGPBench (mock): would open the key folder and select ${a.fpr}`
+      : "PGPBench (mock): would open the key folder",
   );
   return true;
 }

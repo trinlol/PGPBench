@@ -1,4 +1,4 @@
-# PocketPGP <-> GnuPG interop test matrix (plan section 12).
+# PGPBench <-> GnuPG interop test matrix (plan section 12).
 #
 # Drives the app's real Rust core through `interop-cli` against stock GnuPG
 # in isolated scratch directories. Prints PASS/FAIL per case and exits
@@ -13,7 +13,7 @@
 
 $ErrorActionPreference = "Continue"
 $root = Split-Path -Parent $PSScriptRoot
-$work = Join-Path $env:TEMP "pocketpgp-interop"
+$work = Join-Path $env:TEMP "pgpbench-interop"
 
 # Kill any gpg-agent still holding sockets in the scratch home BEFORE
 # wiping it - stale agents cause sporadic "socket file removed - retrying"
@@ -24,7 +24,7 @@ gpgconf --kill gpg-agent 2>$null | Out-Null
 if (Test-Path $work) { Remove-Item -Recurse -Force $work }
 New-Item -ItemType Directory -Force -Path "$work\store", "$work\gnupg", "$work\artifacts" | Out-Null
 
-$env:POCKETPGP_DATA_DIR = "$work\store"
+$env:PGPBENCH_DATA_DIR = "$work\store"
 $cli = Join-Path $root "src-tauri\target\debug\interop-cli.exe"
 
 $script:pass = 0

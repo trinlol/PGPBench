@@ -1,5 +1,5 @@
 /**
- * PocketPGP IPC contract, shared between the Rust command layer (serde) and
+ * PGPBench IPC contract, shared between the Rust command layer (serde) and
  * the webview UI. Rust structs MUST serialize exactly as defined here.
  *
  * Security rule (plan §3): only public material, metadata, results and

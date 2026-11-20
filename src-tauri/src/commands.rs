@@ -26,7 +26,7 @@ fn with_store<T>(state: &State<AppState>, f: impl FnOnce(&Store) -> AppResult<T>
 fn cap_paste(s: &str) -> AppResult<()> {
     if s.len() > MAX_PASTE_BYTES {
         return Err(AppError::input(
-            "the pasted input is larger than the 1 MB limit PocketPGP accepts",
+            "the pasted input is larger than the 1 MB limit PGPBench accepts",
         ));
     }
     Ok(())

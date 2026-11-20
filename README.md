@@ -1,12 +1,12 @@
-# PocketPGP
+# PGPBench
 
-[![CI](https://github.com/trinlol/PocketPGP/actions/workflows/ci.yml/badge.svg)](https://github.com/trinlol/PocketPGP/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/trinlol/PocketPGP)](https://github.com/trinlol/PocketPGP/releases)
+[![CI](https://github.com/trinlol/PGPBench/actions/workflows/ci.yml/badge.svg)](https://github.com/trinlol/PGPBench/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/trinlol/PGPBench)](https://github.com/trinlol/PGPBench/releases)
 
 A minimal, modern OpenPGP app for Windows, clipboard-first, with no UI
 bloat: paste to decrypt or encrypt, and everything stays on your device.
 
-![PocketPGP in action: paste an encrypted message, unlock with your passphrase, read the verified plaintext - then type a reply and encrypt it for your recipients](docs/demo.gif)
+![PGPBench in action: paste an encrypted message, unlock with your passphrase, read the verified plaintext - then type a reply and encrypt it for your recipients](docs/demo.gif)
 
 | Workbench, one paste surface, auto-detects | Keys, your keyring at a glance |
 |---|---|
@@ -38,11 +38,11 @@ Everything you need for personal daily OpenPGP use, nothing else:
 ## Install
 
 **Windows 10/11**, grab the latest release from the
-[releases page](https://github.com/trinlol/PocketPGP/releases):
+[releases page](https://github.com/trinlol/PGPBench/releases):
 
-- **`PocketPGP_0.1.0_x64-setup.exe`**, the installer (per-user, no admin
+- **`PGPBench_<version>_x64-setup.exe`**, the installer (per-user, no admin
   prompt). Adds Start-menu entries and an uninstaller.
-- **`pocketpgp.exe`**, the portable build. One file, no install; put it
+- **`pgpbench.exe`**, the portable build. One file, no install; put it
   anywhere and run it. Requires the WebView2 Runtime (preinstalled on
   current Windows 10/11).
 
@@ -60,7 +60,7 @@ Build the portable executable:
 
 ```
 npm run tauri build -- --no-bundle
-# → src-tauri/target/release/pocketpgp.exe  (portable, needs WebView2 Runtime)
+# → src-tauri/target/release/pgpbench.exe  (portable, needs WebView2 Runtime)
 ```
 
 The exe is self-contained apart from the WebView2 Runtime, which is
@@ -69,7 +69,7 @@ preinstalled on Windows 10/11 and downloadable from Microsoft.
 ### Where keys live
 
 ```
-%LOCALAPPDATA%\PocketPGP\
+%LOCALAPPDATA%\PGPBench\
   keys\<FPR>.pub.asc    armored public key (exactly what you paste into an email)
   keys\<FPR>.sec.asc    passphrase-encrypted armored secret key
   keys\<FPR>.rev.asc    revocation certificate
@@ -86,7 +86,7 @@ users can read it.
 
 2026 reality: stock GnuPG/Thunderbird implementations speak LibrePGP (v4) and
 cannot read RFC 9580 v6 keys (GnuPG needs ≥ 2.5.23 **plus** the
-`--allow-9980` option). PocketPGP therefore defaults to the profile that
+`--allow-9980` option). PGPBench therefore defaults to the profile that
 works everywhere:
 
 | Profile | Default? | Key format | Protection | Interoperates with |
@@ -95,7 +95,7 @@ works everywhere:
 | **RFC 9580** | opt-in, marked experimental | v6 keys | AEAD (OCB), Argon2 S2K | modern libs only |
 
 The profile is chosen per operation (Advanced panel) and derived per key;
-PocketPGP refuses to emit RFC 9580 ciphertext to v4 recipients and explains
+PGPBench refuses to emit RFC 9580 ciphertext to v4 recipients and explains
 why, and warns when v6 recipients appear in a Compatible context.
 
 ### Interop test matrix
@@ -165,9 +165,9 @@ powershell -File tests\interop.ps1
 - `cargo test --lib` covers keygen round-trips, at-rest encryption of every
   secret packet, armor mangling, and a sign+encrypt → decrypt+verify
   round-trip.
-- `POCKETPGP_DATA_DIR` overrides the key store location (used by the
+- `PGPBENCH_DATA_DIR` overrides the key store location (used by the
   interop harness and tests to isolate state; your real keys live in
-  `%LOCALAPPDATA%\PocketPGP`, which Windows cleanup never touches).
+  `%LOCALAPPDATA%\PGPBench`, which Windows cleanup never touches).
 - CI runs the full test suite on every push; pushing a `v*` tag builds both
   release artifacts on GitHub's runners and attaches them to the release
   automatically (`.github/workflows/release.yml`).

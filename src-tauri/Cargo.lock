@@ -3353,6 +3353,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "pgpbench"
+version = "0.2.0"
+dependencies = [
+ "base64 0.22.1",
+ "chrono",
+ "hex",
+ "pgp",
+ "rand",
+ "rsa",
+ "serde",
+ "serde_json",
+ "smallvec",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-clipboard-manager",
+ "tauri-plugin-process",
+ "tauri-plugin-updater",
+ "tokio",
+ "zeroize",
+]
+
+[[package]]
 name = "phf"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3515,28 +3537,6 @@ dependencies = [
  "fdeflate",
  "flate2",
  "miniz_oxide 0.8.9",
-]
-
-[[package]]
-name = "pocketpgp"
-version = "0.1.5"
-dependencies = [
- "base64 0.22.1",
- "chrono",
- "hex",
- "pgp",
- "rand",
- "rsa",
- "serde",
- "serde_json",
- "smallvec",
- "tauri",
- "tauri-build",
- "tauri-plugin-clipboard-manager",
- "tauri-plugin-process",
- "tauri-plugin-updater",
- "tokio",
- "zeroize",
 ]
 
 [[package]]

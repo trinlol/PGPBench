@@ -150,7 +150,7 @@ export default function App() {
             </svg>
           </div>
           <div>
-            <h1 className="text-base font-semibold leading-tight">PocketPGP</h1>
+            <h1 className="text-base font-semibold leading-tight">PGPBench</h1>
             <p className="text-[11px] leading-tight text-neutral-500 dark:text-neutral-400">
               offline OpenPGP · clipboard-first
             </p>
@@ -232,7 +232,7 @@ export default function App() {
         <div className="mb-4">
           <Banner
             tone="info"
-            title={`PocketPGP ${updateAvailable.version} is available`}
+            title={`PGPBench ${updateAvailable.version} is available`}
           >
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <Button variant="primary" onClick={() => void runUpdate()}>
@@ -243,7 +243,7 @@ export default function App() {
               </Button>
             </div>
             <p className="mt-1 text-[11px] opacity-70">
-              Downloads from github.com/trinlol/PocketPGP and verifies a cryptographic
+              Downloads from github.com/trinlol/PGPBench and verifies a cryptographic
               signature before installing.
             </p>
           </Banner>
@@ -357,7 +357,7 @@ export default function App() {
           </Field>
           <div className="flex items-center justify-between border-t border-neutral-200 pt-3 dark:border-neutral-800">
             <div className="text-[11px] leading-tight text-neutral-400 dark:text-neutral-500">
-              <div>PocketPGP {appVersion}</div>
+              <div>PGPBench {appVersion}</div>
               <div>MIT OR Apache-2.0</div>
             </div>
             <Button variant="primary" onClick={() => setSettingsOpen(false)}>

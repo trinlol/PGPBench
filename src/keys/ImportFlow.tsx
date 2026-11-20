@@ -160,7 +160,7 @@ export function ImportFlow({
 
         {saved ? (
           <Banner tone="success" title="Saved to keyring">
-            The key is now available everywhere in PocketPGP.
+            The key is now available everywhere in PGPBench.
           </Banner>
         ) : null}
 

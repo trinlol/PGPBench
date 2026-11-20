@@ -1,4 +1,4 @@
-//! Keyring storage: %LOCALAPPDATA%\PocketPGP
+//! Keyring storage: %LOCALAPPDATA%\PGPBench
 //!
 //! Layout (plan §7):
 //!   keys\<FPR>.pub.asc    armored public key (exactly what you'd paste into an email)
@@ -77,17 +77,30 @@ pub struct Store {
 }
 
 impl Store {
-    /// Resolve %LOCALAPPDATA%\PocketPGP (or $POCKETPGP_DATA_DIR when
-    /// overridden - used by the interop test harness to isolate keyring
-    /// state), create it, verify the ACL, and load settings.
+    /// Resolve %LOCALAPPDATA%\PGPBench (or $PGPBENCH_DATA_DIR / legacy
+    /// $POCKETPGP_DATA_DIR when overridden - used by the interop test harness
+    /// to isolate keyring state), migrating a legacy %LOCALAPPDATA%\PocketPGP
+    /// folder if present, create it, verify the ACL, and load settings.
     pub fn init() -> AppResult<Self> {
-        let root = match std::env::var_os("POCKETPGP_DATA_DIR") {
+        let root = match std::env::var_os("PGPBENCH_DATA_DIR")
+            .or_else(|| std::env::var_os("POCKETPGP_DATA_DIR"))
+        {
             Some(dir) => PathBuf::from(dir),
             None => {
                 let local = std::env::var_os("LOCALAPPDATA")
                     .map(PathBuf::from)
                     .ok_or_else(|| AppError::io("cannot resolve %LOCALAPPDATA%"))?;
-                local.join("PocketPGP")
+                let target = local.join("PGPBench");
+                let legacy = local.join("PocketPGP");
+                if !target.exists() && legacy.exists() {
+                    if fs::rename(&legacy, &target).is_ok() {
+                        target
+                    } else {
+                        legacy
+                    }
+                } else {
+                    target
+                }
             }
         };
         let keys_dir = root.join("keys");
@@ -295,8 +308,8 @@ fn check_acl(dir: &Path) -> AppResult<Option<String>> {
         || text.contains("authenticated users");
     if too_open {
         return Ok(Some(
-            "The PocketPGP key store is accessible to other users (unexpected ACL). \
-             Consider tightening it: icacls \"%LOCALAPPDATA%\\PocketPGP\""
+            "The PGPBench key store is accessible to other users (unexpected ACL). \
+             Consider tightening it: icacls \"%LOCALAPPDATA%\\PGPBench\""
                 .into(),
         ));
     }

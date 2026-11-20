@@ -1,8 +1,8 @@
-# Build reproducible release artifacts for PocketPGP.
+# Build reproducible release artifacts for PGPBench.
 #
 # Produces in release\:
-#   PocketPGP_<version>_x64-setup.exe   NSIS installer (per-user)
-#   PocketPGP-<version>-win64-portable.zip  portable exe
+#   PGPBench_<version>_x64-setup.exe   NSIS installer (per-user)
+#   PGPBench-<version>-win64-portable.zip  portable exe
 #
 # Usage: powershell -File scripts\build-release.ps1
 
@@ -16,14 +16,14 @@ if ($LASTEXITCODE -ne 0) { Write-Host "build failed" -ForegroundColor Red; exit 
 
 $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
 $setup = Get-ChildItem "src-tauri\target\release\bundle\nsis\*-setup.exe" | Select-Object -First 1
-$portable = "src-tauri\target\release\pocketpgp.exe"
+$portable = "src-tauri\target\release\pgpbench.exe"
 
 if (-not $setup) { Write-Host "installer not found" -ForegroundColor Red; exit 1 }
 if (-not (Test-Path $portable)) { Write-Host "portable exe not found" -ForegroundColor Red; exit 1 }
 
 New-Item -ItemType Directory -Force -Path "release" | Out-Null
 Copy-Item $setup.FullName "release\" -Force
-$zip = "release\PocketPGP-$version-win64-portable.zip"
+$zip = "release\PGPBench-$version-win64-portable.zip"
 if (Test-Path $zip) { Remove-Item $zip }
 Compress-Archive -Path $portable -DestinationPath $zip -Force
 

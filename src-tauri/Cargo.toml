@@ -1,16 +1,16 @@
 [package]
-name = "pocketpgp"
-version = "0.1.5"
+name = "pgpbench"
+version = "0.2.0"
 description = "A minimal, modern, fully-offline OpenPGP app for Windows"
-authors = ["PocketPGP contributors"]
+authors = ["PGPBench contributors"]
 edition = "2021"
 rust-version = "1.90"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/trinlol/PocketPGP"
-default-run = "pocketpgp"
+repository = "https://github.com/trinlol/PGPBench"
+default-run = "pgpbench"
 
 [lib]
-name = "pocketpgp_lib"
+name = "pgpbench_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

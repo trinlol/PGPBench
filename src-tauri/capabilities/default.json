@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "PocketPGP least-privilege capability: core window handling plus explicit clipboard read/write/clear. No network, no filesystem, no shell.",
+  "description": "PGPBench least-privilege capability: core window handling plus explicit clipboard read/write/clear. No network, no filesystem, no shell.",
   "windows": ["main"],
   "permissions": [
     "core:default",
